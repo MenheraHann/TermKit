@@ -15,15 +15,16 @@ struct CategorySidebar: View {
 
                 // 一级分类：工具列表
                 ForEach(store.tools, id: \.self) { tool in
-                    // 工具按钮
+                    // 工具按钮：展开时也保持高亮
                     sidebarButton(
                         label: tool,
-                        isSelected: store.selectedTool == tool && store.selectedCategory == nil,
+                        isSelected: store.selectedTool == tool,
                         isBold: true
                     ) {
                         store.selectedTool = tool
                         store.selectedCategory = nil
                     }
+                    .help(tool) // tooltip 防止长名称截断
 
                     // 二级分类：选中工具后展开对应 category
                     if store.selectedTool == tool {

@@ -21,22 +21,30 @@ class SnippetStore: ObservableObject {
         return allSnippets.first { $0.id == id }
     }
 
-    /// 从所有片段中提取的去重排序工具列表（一级分类）
-    var tools: [String] {
-        Array(Set(allSnippets.map(\.tool))).sorted()
+    /// 仅启用的片段
+    private var enabledSnippets: [Snippet] {
+        allSnippets.filter(\.enabled)
     }
 
-    /// 从所有片段中提取的去重排序分类列表（二级分类），受 selectedTool 过滤
+    /// 从启用的片段中提取去重排序工具列表（一级分类）
+    var tools: [String] {
+        Array(Set(enabledSnippets.map(\.tool))).sorted()
+    }
+
+    /// 从启用的片段中提取去重排序分类列表（二级分类），受 selectedTool 过滤
     var categories: [String] {
-        let source = selectedTool == nil
-            ? allSnippets
-            : allSnippets.filter { $0.tool == selectedTool }
+        let source: [Snippet]
+        if let tool = selectedTool {
+            source = enabledSnippets.filter { $0.tool == tool }
+        } else {
+            source = enabledSnippets
+        }
         return Array(Set(source.map(\.category))).sorted()
     }
 
     /// 根据当前搜索条件、tool 和 category 过滤后的片段列表
     var filteredSnippets: [Snippet] {
-        var result = allSnippets.filter(\.enabled)
+        var result = enabledSnippets
         if let tool = selectedTool {
             result = result.filter { $0.tool == tool }
         }
@@ -48,6 +56,9 @@ class SnippetStore: ObservableObject {
             result = result.filter {
                 $0.title.lowercased().contains(query) ||
                 $0.description.lowercased().contains(query) ||
+                $0.command.lowercased().contains(query) ||
+                $0.tool.lowercased().contains(query) ||
+                $0.category.lowercased().contains(query) ||
                 $0.tags.contains(where: { $0.lowercased().contains(query) })
             }
         }
