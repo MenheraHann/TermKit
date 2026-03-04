@@ -31,16 +31,14 @@ enum TerminalError: Error, LocalizedError {
 /// 终端服务，负责检测当前终端类型并执行命令
 enum TerminalService {
 
+    /// 记录面板打开前的终端应用（由 PanelManager 在 toggle 时设置）
+    @MainActor static var previousTerminal: TerminalType = .unknown
+
     // MARK: - 检测终端
 
-    /// 通过前台应用的 bundleIdentifier 判断当前终端类型
-    static func detectTerminal() -> TerminalType {
-        guard let bundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier else {
-            print("[TermKit] TerminalService.detectTerminal() - 无法获取前台应用 bundleID")
-            return .unknown
-        }
-        print("[TermKit] TerminalService.detectTerminal() - 前台应用: \(bundleID)")
-
+    /// 通过前台应用的 bundleIdentifier 判断终端类型
+    static func detectFromBundleID(_ bundleID: String?) -> TerminalType {
+        guard let bundleID = bundleID else { return .unknown }
         switch bundleID {
         case "com.googlecode.iterm2":
             return .iTerm2
@@ -51,22 +49,36 @@ enum TerminalService {
         }
     }
 
+    /// 获取当前可用终端：优先用面板打开前记录的终端，否则检查运行中的终端应用
+    @MainActor
+    static func resolveTerminal() -> TerminalType {
+        // 优先使用面板打开前记录的终端
+        if previousTerminal != .unknown {
+            return previousTerminal
+        }
+        // 回退：检查是否有终端应用在运行
+        let apps = NSWorkspace.shared.runningApplications
+        if apps.contains(where: { $0.bundleIdentifier == "com.googlecode.iterm2" }) {
+            return .iTerm2
+        }
+        if apps.contains(where: { $0.bundleIdentifier == "com.apple.Terminal" }) {
+            return .terminal
+        }
+        return .unknown
+    }
+
     // MARK: - 执行命令
 
     /// 向当前终端发送命令
-    /// - Parameter command: 要执行的命令字符串
-    /// - Returns: 成功或包含错误的 Result
+    @MainActor
     static func executeCommand(_ command: String) -> Result<Void, TerminalError> {
-        let terminalType = detectTerminal()
+        let terminalType = resolveTerminal()
 
         switch terminalType {
         case .unknown:
-            print("[TermKit] TerminalService.executeCommand() - 未识别终端")
             return .failure(.unknownTerminal)
-
         case .iTerm2:
             return executeInITerm2(command)
-
         case .terminal:
             return executeInTerminal(command)
         }
@@ -75,55 +87,58 @@ enum TerminalService {
     // MARK: - iTerm2
 
     /// 通过 AppleScript 在 iTerm2 中执行命令
-    /// - 多行命令按 \n 分割，逐行发送 write text
     private static func executeInITerm2(_ command: String) -> Result<Void, TerminalError> {
-        let escaped = escapeForAppleScript(command)
-        let lines = escaped.components(separatedBy: "\\n")
-
-        // 逐行构建 write text 语句
+        // 先按实际换行符分割，再转义每行
+        let lines = command.components(separatedBy: "\n")
         let writeStatements = lines.map { line in
-            "write text \"\(line)\""
+            let escaped = escapeForAppleScript(line)
+            return "write text \"\(escaped)\""
         }.joined(separator: "\n")
 
         let script = """
         tell application "iTerm2"
+            activate
+            if (count of windows) = 0 then
+                create window with default profile
+            end if
             tell current session of current window
                 \(writeStatements)
             end tell
         end tell
         """
 
-        print("[TermKit] TerminalService - 发送到 iTerm2:\n\(script)")
         return runAppleScript(script)
     }
 
     // MARK: - Terminal.app
 
-    /// 通过 AppleScript 在 Terminal.app 中执行命令
     private static func executeInTerminal(_ command: String) -> Result<Void, TerminalError> {
         let escaped = escapeForAppleScript(command)
 
         let script = """
         tell application "Terminal"
-            do script "\(escaped)" in front window
+            activate
+            if (count of windows) = 0 then
+                do script "\(escaped)"
+            else
+                do script "\(escaped)" in front window
+            end if
         end tell
         """
 
-        print("[TermKit] TerminalService - 发送到 Terminal.app:\n\(script)")
         return runAppleScript(script)
     }
 
     // MARK: - 辅助方法
 
     /// 转义命令字符串以安全嵌入 AppleScript 双引号字符串
-    /// - 反斜杠 → \\\\，双引号 → \\"
     private static func escapeForAppleScript(_ text: String) -> String {
         return text
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "\"", with: "\\\"")
     }
 
-    /// 执行 AppleScript 字符串，返回结果
+    /// 执行 AppleScript 字符串
     private static func runAppleScript(_ source: String) -> Result<Void, TerminalError> {
         guard let script = NSAppleScript(source: source) else {
             return .failure(.executionFailed("无法创建 AppleScript"))
@@ -133,12 +148,15 @@ enum TerminalService {
         script.executeAndReturnError(&error)
 
         if let error = error {
+            let errorNumber = error[NSAppleScript.errorNumber] as? Int
             let message = error[NSAppleScript.errorMessage] as? String ?? "未知 AppleScript 错误"
-            print("[TermKit] AppleScript 错误: \(message)")
+            // -1743: 没有自动化授权
+            if errorNumber == -1743 {
+                return .failure(.noPermission)
+            }
             return .failure(.executionFailed(message))
         }
 
-        print("[TermKit] AppleScript 执行成功")
         return .success(())
     }
 }

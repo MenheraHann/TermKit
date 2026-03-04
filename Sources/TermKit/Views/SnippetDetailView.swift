@@ -8,11 +8,23 @@ struct SnippetDetailView: View {
 
     /// 是否显示危险确认弹窗
     @State private var showDangerConfirm = false
+    /// 是否显示变量输入弹窗
+    @State private var showVariableInput = false
+    /// 记录触发变量输入的操作类型（copy / run）
+    @State private var pendingAction: PendingAction?
+    /// 变量替换后的命令（用于危险确认流程）
+    @State private var resolvedCommand: String?
+
+    /// 延迟操作类型
+    private enum PendingAction {
+        case copy
+        case run
+    }
 
     var body: some View {
         if let snippet = snippet {
             VStack(alignment: .leading, spacing: 8) {
-                // 命令预览区：等宽字体 + 深色背景
+                // 命令预览区：等宽字体 + 深色背景（保留占位符原文）
                 ScrollView(.horizontal, showsIndicators: false) {
                     Text(snippet.command)
                         .font(.system(.callout, design: .monospaced))
@@ -30,7 +42,7 @@ struct SnippetDetailView: View {
                 HStack(spacing: 8) {
                     // 复制按钮
                     Button {
-                        onCopy(snippet.command)
+                        handleAction(.copy, snippet: snippet)
                     } label: {
                         Label("Copy", systemImage: "doc.on.doc")
                             .font(.callout)
@@ -40,7 +52,7 @@ struct SnippetDetailView: View {
 
                     // 运行按钮
                     Button {
-                        handleRun(snippet)
+                        handleAction(.run, snippet: snippet)
                     } label: {
                         Label("Run", systemImage: "play.fill")
                             .font(.callout)
@@ -56,10 +68,33 @@ struct SnippetDetailView: View {
                     snippet: snippet,
                     onConfirm: {
                         showDangerConfirm = false
-                        onRun(snippet)
+                        let cmd = resolvedCommand ?? snippet.command
+                        let resolved = makeResolvedSnippet(snippet, command: cmd)
+                        resolvedCommand = nil
+                        onRun(resolved)
                     },
                     onCancel: {
                         showDangerConfirm = false
+                        resolvedCommand = nil
+                        pendingAction = nil
+                    }
+                )
+            }
+            .sheet(isPresented: $showVariableInput) {
+                VariableInputView(
+                    snippet: snippet,
+                    onConfirm: { values in
+                        showVariableInput = false
+                        let cmd = VariableResolver.resolveCommand(
+                            snippet.command,
+                            variables: snippet.variables,
+                            values: values
+                        )
+                        finishWithResolvedCommand(cmd, snippet: snippet)
+                    },
+                    onCancel: {
+                        showVariableInput = false
+                        pendingAction = nil
                     }
                 )
             }
@@ -73,15 +108,56 @@ struct SnippetDetailView: View {
         }
     }
 
-    // MARK: - Run 流程
+    // MARK: - 操作分发
 
-    /// 处理运行按钮点击：safe 直接执行，danger/caution 弹确认
-    private func handleRun(_ snippet: Snippet) {
-        switch snippet.dangerLevel {
-        case .safe:
-            onRun(snippet)
-        case .caution, .danger:
-            showDangerConfirm = true
+    /// 处理按钮点击：有变量时先弹输入框，无变量时直接执行
+    private func handleAction(_ action: PendingAction, snippet: Snippet) {
+        pendingAction = action
+
+        let hasVariables = snippet.variables != nil
+            && !VariableResolver.extractVariableKeys(from: snippet.command).isEmpty
+
+        if hasVariables {
+            showVariableInput = true
+        } else {
+            finishWithResolvedCommand(snippet.command, snippet: snippet)
         }
+    }
+
+    /// 拿到最终命令后，根据操作类型和危险等级决定下一步
+    private func finishWithResolvedCommand(_ command: String, snippet: Snippet) {
+        guard let action = pendingAction else { return }
+
+        switch action {
+        case .copy:
+            pendingAction = nil
+            onCopy(command)
+        case .run:
+            switch snippet.dangerLevel {
+            case .safe:
+                pendingAction = nil
+                onRun(makeResolvedSnippet(snippet, command: command))
+            case .caution, .danger:
+                // 暂存替换后的命令，等危险确认后再执行
+                resolvedCommand = command
+                showDangerConfirm = true
+            }
+        }
+    }
+
+    /// 用替换后的命令构造临时 Snippet
+    private func makeResolvedSnippet(_ snippet: Snippet, command: String) -> Snippet {
+        Snippet(
+            id: snippet.id,
+            title: snippet.title,
+            description: snippet.description,
+            tool: snippet.tool,
+            category: snippet.category,
+            tags: snippet.tags,
+            command: command,
+            variables: nil,
+            dangerLevel: snippet.dangerLevel,
+            enabled: snippet.enabled
+        )
     }
 }

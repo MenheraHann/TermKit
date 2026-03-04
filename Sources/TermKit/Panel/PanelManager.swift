@@ -48,10 +48,12 @@ class PanelManager: ObservableObject {
     /// 显示面板并激活应用
     private func show() {
         guard let panel = panel else { return }
+        // 记录面板打开前的前台应用（用于 Run 功能识别终端）
+        let frontBundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        TerminalService.previousTerminal = TerminalService.detectFromBundleID(frontBundleID)
         panel.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         isVisible = true
-        print("[TermKit] 面板已显示")
     }
 
     /// 隐藏面板

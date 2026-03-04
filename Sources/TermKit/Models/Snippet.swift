@@ -28,6 +28,19 @@ struct Snippet: Codable, Identifiable, Hashable {
     let dangerLevel: DangerLevel
     let enabled: Bool
 
+    /// 普通初始化器（用于构造替换变量后的临时 Snippet）
+    init(
+        id: String, title: String, description: String,
+        tool: String, category: String, tags: [String],
+        command: String, variables: [SnippetVariable]?,
+        dangerLevel: DangerLevel, enabled: Bool
+    ) {
+        self.id = id; self.title = title; self.description = description
+        self.tool = tool; self.category = category; self.tags = tags
+        self.command = command; self.variables = variables
+        self.dangerLevel = dangerLevel; self.enabled = enabled
+    }
+
     /// 兼容 v1 片段文件（无 tool 字段），默认归入"通用"
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
