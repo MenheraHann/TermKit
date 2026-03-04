@@ -13,7 +13,10 @@ app: build
 	@mkdir -p $(APP_NAME)/Contents/MacOS
 	@mkdir -p $(APP_NAME)/Contents/Resources
 	@cp .build/release/TermKit $(APP_NAME)/Contents/MacOS/TermKit
+	@chmod 755 $(APP_NAME)/Contents/MacOS/TermKit
 	@cp Resources/Info.plist $(APP_NAME)/Contents/Info.plist
+	@# Ad-hoc sign so macOS doesn't block it
+	@codesign --force --sign - $(APP_NAME)
 	@echo "✅ $(APP_NAME) created."
 
 install: app
@@ -21,8 +24,11 @@ install: app
 	@# Install .app
 	@rm -rf $(APP_DIR)
 	@cp -R $(APP_NAME) $(APP_DIR)
+	@chmod -R 755 $(APP_DIR)
+	@xattr -cr $(APP_DIR)
 	@# Install opentk CLI
 	@install -m 755 .build/release/opentk $(PREFIX)/opentk
+	@codesign --force --sign - $(PREFIX)/opentk
 	@echo ""
 	@echo "✅ Done!"
 	@echo "  • TermKit.app → $(APP_DIR)"
