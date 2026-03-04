@@ -68,8 +68,8 @@ struct VariableInputView: View {
         .padding(16)
         .frame(width: 360)
         .onAppear {
-            // 用 default 值初始化
-            for v in activeVariables {
+            // 只在值不存在时用 default 初始化（避免重新打开时覆盖）
+            for v in activeVariables where values[v.key] == nil {
                 values[v.key] = v.default ?? ""
             }
         }

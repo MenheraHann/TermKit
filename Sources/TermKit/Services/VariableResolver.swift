@@ -39,13 +39,14 @@ enum VariableResolver {
         return result
     }
 
+    /// 缓存正则：匹配 {KEY} 占位符（大写字母/下划线开头，可含数字）
+    // swiftlint:disable:next force_try
+    private static let variableRegex = try! NSRegularExpression(pattern: "\\{([A-Z_][A-Z0-9_]*)\\}")
+
     /// 用正则提取命令中所有 {KEY} 的 KEY 名称（去重，保持顺序）
     static func extractVariableKeys(from command: String) -> [String] {
-        guard let regex = try? NSRegularExpression(pattern: "\\{([A-Z_][A-Z0-9_]*)\\}") else {
-            return []
-        }
         let range = NSRange(command.startIndex..., in: command)
-        let matches = regex.matches(in: command, range: range)
+        let matches = variableRegex.matches(in: command, range: range)
 
         var seen = Set<String>()
         var keys: [String] = []
