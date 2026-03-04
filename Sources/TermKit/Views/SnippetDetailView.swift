@@ -5,6 +5,8 @@ struct SnippetDetailView: View {
     let snippet: Snippet?
     let onCopy: (String) -> Void
     let onRun: (Snippet) -> Void
+    /// 设置管理器，控制 Run 按钮和危险确认行为
+    @ObservedObject var settings: SettingsManager
 
     /// 是否显示危险确认弹窗
     @State private var showDangerConfirm = false
@@ -50,16 +52,18 @@ struct SnippetDetailView: View {
                     .buttonStyle(.borderedProminent)
                     .controlSize(.small)
 
-                    // 运行按钮
-                    Button {
-                        handleAction(.run, snippet: snippet)
-                    } label: {
-                        Label("Run", systemImage: "play.fill")
-                            .font(.callout)
+                    // 运行按钮（受设置开关控制）
+                    if settings.showRunButton {
+                        Button {
+                            handleAction(.run, snippet: snippet)
+                        } label: {
+                            Label("Run", systemImage: "play.fill")
+                                .font(.callout)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.green)
+                        .controlSize(.small)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.green)
-                    .controlSize(.small)
                 }
             }
             .padding(10)
@@ -138,9 +142,15 @@ struct SnippetDetailView: View {
                 pendingAction = nil
                 onRun(makeResolvedSnippet(snippet, command: command))
             case .caution, .danger:
-                // 暂存替换后的命令，等危险确认后再执行
-                resolvedCommand = command
-                showDangerConfirm = true
+                if settings.confirmDangerousCommands {
+                    // 暂存替换后的命令，等危险确认后再执行
+                    resolvedCommand = command
+                    showDangerConfirm = true
+                } else {
+                    // 用户关闭了危险确认，直接执行
+                    pendingAction = nil
+                    onRun(makeResolvedSnippet(snippet, command: command))
+                }
             }
         }
     }

@@ -12,6 +12,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     let panelManager = PanelManager()
     /// 片段数据管理中心
     let snippetStore = SnippetStore()
+    /// 设置管理器
+    let settingsManager = SettingsManager()
+    /// 最近使用管理器
+    let recentManager = RecentManager()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 设为 accessory 应用，不在 Dock 中显示图标
@@ -21,7 +25,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         snippetStore.load()
 
         // 创建面板，嵌入 ContentView
-        let contentView = ContentView(store: snippetStore, panelManager: panelManager)
+        let contentView = ContentView(
+            store: snippetStore,
+            panelManager: panelManager,
+            settings: settingsManager,
+            recentManager: recentManager
+        )
         panelManager.createPanel(with: contentView)
 
         // 全局热键监听（应用未聚焦时生效）

@@ -14,6 +14,8 @@ class SnippetStore: ObservableObject {
     @Published var selectedCategory: String? = nil
     /// 当前选中的片段 ID（使用稳定 ID 以避免数据刷新后引用失效）
     @Published var selectedSnippetID: String? = nil
+    /// 是否正在显示"最近使用"列表
+    @Published var showRecent: Bool = false
 
     /// 根据 selectedSnippetID 查找对应的片段
     var selectedSnippet: Snippet? {
