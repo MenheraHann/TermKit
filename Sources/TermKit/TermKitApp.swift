@@ -2,12 +2,12 @@ import SwiftUI
 
 @main
 struct TermKitApp: App {
-    @StateObject private var snippetStore = SnippetStore()
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {
         MenuBarExtra("TermKit", systemImage: "terminal") {
             Button("Toggle Panel (\u{2325}Space)") {
-                // Will be wired in Task 4
+                appDelegate.panelManager.toggle()
             }
             Divider()
             Button("Quit") { NSApp.terminate(nil) }
