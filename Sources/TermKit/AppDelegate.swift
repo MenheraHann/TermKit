@@ -55,6 +55,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self?.panelManager.toggle()
         }
 
+        // 如果带 --show 参数启动，直接显示面板
+        if CommandLine.arguments.contains("--show") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                self?.panelManager.toggle()
+            }
+        }
+
         print("[TermKit] 应用启动完成，按 ⌥Space 或运行 opentk 切换面板")
     }
 
