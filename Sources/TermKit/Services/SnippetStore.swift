@@ -10,8 +10,14 @@ class SnippetStore: ObservableObject {
     @Published var searchText: String = ""
     /// 当前选中的分类（nil 表示全部）
     @Published var selectedCategory: String? = nil
-    /// 当前选中的片段
-    @Published var selectedSnippet: Snippet? = nil
+    /// 当前选中的片段 ID（使用稳定 ID 以避免数据刷新后引用失效）
+    @Published var selectedSnippetID: String? = nil
+
+    /// 根据 selectedSnippetID 查找对应的片段
+    var selectedSnippet: Snippet? {
+        guard let id = selectedSnippetID else { return nil }
+        return allSnippets.first { $0.id == id }
+    }
 
     /// 从所有片段中提取的去重排序分类列表
     var categories: [String] {
