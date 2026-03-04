@@ -30,15 +30,28 @@ struct ContentView: View {
             Divider()
 
             // 底部详情区域
-            SnippetDetailView(snippet: store.selectedSnippet) { command in
-                if ClipboardService.copy(command) {
-                    toast.show("Copied!")
-                    panelManager.toggle()
-                } else {
-                    toast.show("Copy failed")
+            SnippetDetailView(
+                snippet: store.selectedSnippet,
+                onCopy: { command in
+                    if ClipboardService.copy(command) {
+                        toast.show("Copied!")
+                        panelManager.toggle()
+                    } else {
+                        toast.show("Copy failed")
+                    }
+                },
+                onRun: { snippet in
+                    let result = TerminalService.executeCommand(snippet.command)
+                    switch result {
+                    case .success:
+                        toast.show("已发送到终端")
+                        panelManager.toggle()
+                    case .failure(let error):
+                        toast.show(error.localizedDescription)
+                    }
                 }
-            }
-            .frame(height: 100)
+            )
+            .frame(height: 120)
         }
         .frame(width: 420, height: 520)
         .overlay(ToastView(toast: toast))
