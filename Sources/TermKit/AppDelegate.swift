@@ -46,7 +46,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return event
         }
 
-        print("[TermKit] 应用启动完成，按 ⌥Space 切换面板")
+        // 分布式通知：opentk CLI 触发面板切换
+        DistributedNotificationCenter.default().addObserver(
+            forName: Notification.Name("com.termkit.toggle"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.panelManager.toggle()
+        }
+
+        print("[TermKit] 应用启动完成，按 ⌥Space 或运行 opentk 切换面板")
     }
 
     /// 处理热键事件
