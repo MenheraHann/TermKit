@@ -1,4 +1,5 @@
 import SwiftUI
+import ServiceManagement
 
 /// 全局设置管理器，使用 @AppStorage 持久化用户偏好
 /// 手动触发 objectWillChange 确保 @ObservedObject 消费者正确刷新
@@ -23,6 +24,25 @@ class SettingsManager: ObservableObject {
         case "iterm2": return .iTerm2
         case "terminal": return .terminal
         default: return nil // auto
+        }
+    }
+
+    /// 登录时自动启动
+    var launchAtLogin: Bool {
+        get {
+            SMAppService.mainApp.status == .enabled
+        }
+        set {
+            objectWillChange.send()
+            do {
+                if newValue {
+                    try SMAppService.mainApp.register()
+                } else {
+                    try SMAppService.mainApp.unregister()
+                }
+            } catch {
+                print("[TermKit] 登录启动设置失败: \(error)")
+            }
         }
     }
 }

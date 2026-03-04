@@ -46,6 +46,15 @@ struct SettingsView: View {
                     .font(.callout)
             }
 
+            // 登录时自动启动
+            Toggle(isOn: Binding(
+                get: { settings.launchAtLogin },
+                set: { settings.launchAtLogin = $0 }
+            )) {
+                Label("开机自动启动", systemImage: "power")
+                    .font(.callout)
+            }
+
             // 默认终端
             HStack {
                 Label("默认终端", systemImage: "terminal")
@@ -86,6 +95,6 @@ struct SettingsView: View {
             }
         }
         .padding(20)
-        .frame(width: 320, height: 400)
+        .frame(width: 320, height: 460)
     }
 }
