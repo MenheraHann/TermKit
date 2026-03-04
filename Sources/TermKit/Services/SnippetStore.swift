@@ -8,7 +8,9 @@ class SnippetStore: ObservableObject {
     @Published var allSnippets: [Snippet] = []
     /// 当前搜索关键词
     @Published var searchText: String = ""
-    /// 当前选中的分类（nil 表示全部）
+    /// 当前选中的一级分类 tool（nil 表示全部）
+    @Published var selectedTool: String? = nil
+    /// 当前选中的二级分类 category（nil 表示全部）
     @Published var selectedCategory: String? = nil
     /// 当前选中的片段 ID（使用稳定 ID 以避免数据刷新后引用失效）
     @Published var selectedSnippetID: String? = nil
@@ -19,14 +21,25 @@ class SnippetStore: ObservableObject {
         return allSnippets.first { $0.id == id }
     }
 
-    /// 从所有片段中提取的去重排序分类列表
-    var categories: [String] {
-        Array(Set(allSnippets.map(\.category))).sorted()
+    /// 从所有片段中提取的去重排序工具列表（一级分类）
+    var tools: [String] {
+        Array(Set(allSnippets.map(\.tool))).sorted()
     }
 
-    /// 根据当前搜索条件和分类过滤后的片段列表
+    /// 从所有片段中提取的去重排序分类列表（二级分类），受 selectedTool 过滤
+    var categories: [String] {
+        let source = selectedTool == nil
+            ? allSnippets
+            : allSnippets.filter { $0.tool == selectedTool }
+        return Array(Set(source.map(\.category))).sorted()
+    }
+
+    /// 根据当前搜索条件、tool 和 category 过滤后的片段列表
     var filteredSnippets: [Snippet] {
         var result = allSnippets.filter(\.enabled)
+        if let tool = selectedTool {
+            result = result.filter { $0.tool == tool }
+        }
         if let cat = selectedCategory {
             result = result.filter { $0.category == cat }
         }

@@ -18,6 +18,9 @@ struct Snippet: Codable, Identifiable, Hashable {
     let id: String
     let title: String
     let description: String
+    /// 一级分类：所属工具（Claude Code, Codex, Gemini CLI, Aider, OpenClaw, OpenCode, GitHub Copilot CLI, 通用）
+    let tool: String
+    /// 二级分类：功能类别（常用命令, 配置, 调试, 项目管理, 插件&扩展）
     let category: String
     let tags: [String]
     let command: String

@@ -1,39 +1,67 @@
 import SwiftUI
 
-/// 分类侧边栏视图，显示"全部"和各分类选项
+/// 两级导航侧边栏：一级显示 tool 列表，二级显示对应 category
 struct CategorySidebar: View {
     @ObservedObject var store: SnippetStore
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 2) {
-                // "全部"选项
-                categoryButton(label: "All", isSelected: store.selectedCategory == nil) {
+                // "全部"选项 —— 重置 tool 和 category
+                sidebarButton(label: "全部", isSelected: store.selectedTool == nil && store.selectedCategory == nil) {
+                    store.selectedTool = nil
                     store.selectedCategory = nil
                 }
 
-                // 各分类选项
-                ForEach(store.categories, id: \.self) { category in
-                    categoryButton(label: category, isSelected: store.selectedCategory == category) {
-                        store.selectedCategory = category
+                // 一级分类：工具列表
+                ForEach(store.tools, id: \.self) { tool in
+                    // 工具按钮
+                    sidebarButton(
+                        label: tool,
+                        isSelected: store.selectedTool == tool && store.selectedCategory == nil,
+                        isBold: true
+                    ) {
+                        store.selectedTool = tool
+                        store.selectedCategory = nil
+                    }
+
+                    // 二级分类：选中工具后展开对应 category
+                    if store.selectedTool == tool {
+                        let cats = store.categories
+                        ForEach(cats, id: \.self) { category in
+                            sidebarButton(
+                                label: category,
+                                isSelected: store.selectedCategory == category,
+                                indented: true
+                            ) {
+                                store.selectedCategory = category
+                            }
+                        }
                     }
                 }
             }
             .padding(.vertical, 6)
             .padding(.horizontal, 4)
         }
-        .frame(width: 100)
+        .frame(width: 140)
     }
 
-    /// 构建单个分类按钮
+    /// 构建单个侧边栏按钮
     @ViewBuilder
-    private func categoryButton(label: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+    private func sidebarButton(
+        label: String,
+        isSelected: Bool,
+        isBold: Bool = false,
+        indented: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             Text(label)
-                .font(.callout)
+                .font(isBold ? .callout.bold() : .callout)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 8)
+                .padding(.leading, indented ? 20 : 8)
+                .padding(.trailing, 8)
                 .padding(.vertical, 4)
                 .background(
                     RoundedRectangle(cornerRadius: 5)
