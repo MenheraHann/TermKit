@@ -6,8 +6,12 @@ import SwiftUI
 class SnippetStore: ObservableObject {
     /// 所有已加载的片段
     @Published var allSnippets: [Snippet] = []
-    /// 当前搜索关键词
-    @Published var searchText: String = ""
+    /// 当前搜索关键词（输入时自动退出"最近使用"模式）
+    @Published var searchText: String = "" {
+        didSet {
+            if !searchText.isEmpty { showRecent = false }
+        }
+    }
     /// 当前选中的一级分类 tool（nil 表示全部）
     @Published var selectedTool: String? = nil
     /// 当前选中的二级分类 category（nil 表示全部）

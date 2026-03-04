@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 /// 设置面板视图
 struct SettingsView: View {
@@ -64,7 +65,7 @@ struct SettingsView: View {
             // 版本信息
             HStack {
                 Spacer()
-                Text("TermKit v0.5.0")
+                Text("TermKit v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.1.0")")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                 Spacer()

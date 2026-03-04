@@ -3,7 +3,6 @@ import SwiftUI
 /// 两级导航侧边栏：一级显示 tool 列表，二级显示对应 category
 struct CategorySidebar: View {
     @ObservedObject var store: SnippetStore
-    @ObservedObject var recentManager: RecentManager
 
     var body: some View {
         ScrollView {

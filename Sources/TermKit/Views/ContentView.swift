@@ -31,7 +31,7 @@ struct ContentView: View {
 
             // 中间区域：分类侧边栏 + 片段列表
             HStack(spacing: 0) {
-                CategorySidebar(store: store, recentManager: recentManager)
+                CategorySidebar(store: store)
 
                 Divider()
 
