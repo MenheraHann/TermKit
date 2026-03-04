@@ -69,12 +69,10 @@ enum TerminalService {
 
     // MARK: - 执行命令
 
-    /// 向当前终端发送命令
+    /// 向指定终端发送命令
     @MainActor
-    static func executeCommand(_ command: String) -> Result<Void, TerminalError> {
-        let terminalType = resolveTerminal()
-
-        switch terminalType {
+    static func executeCommand(_ command: String, in terminal: TerminalType) -> Result<Void, TerminalError> {
+        switch terminal {
         case .unknown:
             return .failure(.unknownTerminal)
         case .iTerm2:
@@ -82,6 +80,12 @@ enum TerminalService {
         case .terminal:
             return executeInTerminal(command)
         }
+    }
+
+    /// 向自动检测的终端发送命令（兼容旧调用）
+    @MainActor
+    static func executeCommand(_ command: String) -> Result<Void, TerminalError> {
+        return executeCommand(command, in: resolveTerminal())
     }
 
     // MARK: - iTerm2

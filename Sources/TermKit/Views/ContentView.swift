@@ -9,6 +9,10 @@ struct ContentView: View {
     @StateObject private var toast = ToastManager()
     /// 是否显示设置面板
     @State private var showSettings = false
+    /// 是否显示终端选择弹窗
+    @State private var showTerminalPicker = false
+    /// 等待终端选择的片段
+    @State private var pendingRunSnippet: Snippet?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -61,13 +65,18 @@ struct ContentView: View {
                 },
                 onRun: { snippet in
                     recentManager.addRecent(snippet.id)
-                    let result = TerminalService.executeCommand(snippet.command)
-                    switch result {
-                    case .success:
-                        toast.show("已发送到终端")
-                        panelManager.toggle()
-                    case .failure(let error):
-                        toast.show(error.localizedDescription)
+                    // 有默认终端设置 → 直接发送
+                    if let preferred = settings.preferredTerminal {
+                        executeInTerminal(snippet.command, terminal: preferred)
+                    } else {
+                        // 自动模式：先尝试检测，检测不到则弹选择框
+                        let detected = TerminalService.resolveTerminal()
+                        if detected != .unknown {
+                            executeInTerminal(snippet.command, terminal: detected)
+                        } else {
+                            pendingRunSnippet = snippet
+                            showTerminalPicker = true
+                        }
                     }
                 },
                 settings: settings
@@ -79,6 +88,21 @@ struct ContentView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView(settings: settings)
         }
+        .sheet(isPresented: $showTerminalPicker) {
+            TerminalPickerView(
+                onSelect: { terminal in
+                    showTerminalPicker = false
+                    if let snippet = pendingRunSnippet {
+                        executeInTerminal(snippet.command, terminal: terminal)
+                        pendingRunSnippet = nil
+                    }
+                },
+                onCancel: {
+                    showTerminalPicker = false
+                    pendingRunSnippet = nil
+                }
+            )
+        }
     }
 
     /// 当前显示的片段列表（最近使用模式或正常过滤）
@@ -88,5 +112,17 @@ struct ContentView: View {
             return recentManager.recentSnippets(from: store)
         }
         return store.filteredSnippets
+    }
+
+    /// 向指定终端发送命令并处理结果
+    private func executeInTerminal(_ command: String, terminal: TerminalType) {
+        let result = TerminalService.executeCommand(command, in: terminal)
+        switch result {
+        case .success:
+            toast.show("已发送到终端")
+            panelManager.toggle()
+        case .failure(let error):
+            toast.show(error.localizedDescription)
+        }
     }
 }

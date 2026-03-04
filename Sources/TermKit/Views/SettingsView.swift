@@ -46,6 +46,20 @@ struct SettingsView: View {
                     .font(.callout)
             }
 
+            // 默认终端
+            HStack {
+                Label("默认终端", systemImage: "terminal")
+                    .font(.callout)
+                Spacer()
+                Picker("", selection: $settings.defaultTerminal) {
+                    Text("自动检测").tag("auto")
+                    Text("iTerm2").tag("iterm2")
+                    Text("Terminal").tag("terminal")
+                }
+                .pickerStyle(.menu)
+                .frame(width: 130)
+            }
+
             Divider()
 
             // 打开片段目录
@@ -72,6 +86,6 @@ struct SettingsView: View {
             }
         }
         .padding(20)
-        .frame(width: 320, height: 340)
+        .frame(width: 320, height: 400)
     }
 }

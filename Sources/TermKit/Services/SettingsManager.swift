@@ -12,4 +12,17 @@ class SettingsManager: ObservableObject {
     @AppStorage("confirmDangerousCommands") var confirmDangerousCommands: Bool = true {
         didSet { objectWillChange.send() }
     }
+    /// 默认终端：auto / iterm2 / terminal
+    @AppStorage("defaultTerminal") var defaultTerminal: String = "auto" {
+        didSet { objectWillChange.send() }
+    }
+
+    /// 将设置值转为 TerminalType
+    var preferredTerminal: TerminalType? {
+        switch defaultTerminal {
+        case "iterm2": return .iTerm2
+        case "terminal": return .terminal
+        default: return nil // auto
+        }
+    }
 }
