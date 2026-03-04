@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "snippets": [
+    {
+      "id": "port_lsof",
+      "title": "查看端口占用",
+      "description": "lsof 查询端口占用进程",
+      "category": "Debug",
+      "tags": ["port", "lsof", "debug"],
+      "command": "lsof -i :{PORT}",
+      "variables": [{"key": "PORT", "label": "端口号", "default": "3000"}],
+      "dangerLevel": "safe",
+      "enabled": true
+    },
+    {
+      "id": "kill_port",
+      "title": "杀掉端口进程",
+      "description": "kill -9 占用指定端口的进程",
+      "category": "Debug",
+      "tags": ["port", "kill"],
+      "command": "kill -9 $(lsof -t -i :{PORT})",
+      "variables": [{"key": "PORT", "label": "端口号", "default": "3000"}],
+      "dangerLevel": "caution",
+      "enabled": true
+    },
+    {
+      "id": "tail_log",
+      "title": "实时查看日志",
+      "description": "tail -f 实时追踪日志文件",
+      "category": "Debug",
+      "tags": ["log", "tail", "debug"],
+      "command": "tail -f {FILE}",
+      "variables": [{"key": "FILE", "label": "日志文件路径", "default": "/var/log/system.log"}],
+      "dangerLevel": "safe",
+      "enabled": true
+    },
+    {
+      "id": "rg_search",
+      "title": "全文搜索",
+      "description": "ripgrep 全文搜索关键词",
+      "category": "Search",
+      "tags": ["search", "rg", "grep"],
+      "command": "rg \"{KEY}\" -n",
+      "variables": [{"key": "KEY", "label": "搜索关键词", "default": "TODO"}],
+      "dangerLevel": "safe",
+      "enabled": true
+    },
+    {
+      "id": "find_file",
+      "title": "查找文件",
+      "description": "按文件名查找文件",
+      "category": "Search",
+      "tags": ["find", "file", "search"],
+      "command": "find . -name \"{NAME}\"",
+      "variables": [{"key": "NAME", "label": "文件名", "default": "*.swift"}],
+      "dangerLevel": "safe",
+      "enabled": true
+    },
+    {
+      "id": "git_status",
+      "title": "Git 状态",
+      "description": "查看 Git 仓库状态（简洁模式）",
+      "category": "Git",
+      "tags": ["git", "status"],
+      "command": "git status -sb",
+      "variables": null,
+      "dangerLevel": "safe",
+      "enabled": true
+    },
+    {
+      "id": "git_fetch_prune",
+      "title": "清理远端已删分支",
+      "description": "fetch 并清理远端已删除的分支引用",
+      "category": "Git",
+      "tags": ["git", "fetch", "prune", "clean"],
+      "command": "git fetch -p",
+      "variables": null,
+      "dangerLevel": "safe",
+      "enabled": true
+    },
+    {
+      "id": "git_reset_hard",
+      "title": "重置到上一个提交",
+      "description": "⚠️ 硬重置到上一个提交，丢弃所有更改",
+      "category": "Git",
+      "tags": ["git", "reset", "hard", "undo"],
+      "command": "git reset --hard HEAD~1",
+      "variables": null,
+      "dangerLevel": "danger",
+      "enabled": true
+    },
+    {
+      "id": "docker_ps",
+      "title": "容器列表",
+      "description": "列出所有 Docker 容器（含已停止）",
+      "category": "Docker",
+      "tags": ["docker", "ps", "container", "list"],
+      "command": "docker ps -a",
+      "variables": null,
+      "dangerLevel": "safe",
+      "enabled": true
+    },
+    {
+      "id": "docker_prune",
+      "title": "清理 Docker 资源",
+      "description": "⚠️ 清理所有未使用的 Docker 资源",
+      "category": "Docker",
+      "tags": ["docker", "prune", "clean"],
+      "command": "docker system prune",
+      "variables": null,
+      "dangerLevel": "caution",
+      "enabled": true
+    }
+  ]
+}
