@@ -32,7 +32,7 @@ final class ModifierHoldDetector {
     /// 线程安全的 machPort 引用，供 nonisolated 回调重新启用 tap
     private nonisolated(unsafe) var _machPort: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
-    private var backgroundRunLoop: CFRunLoop?
+    private nonisolated(unsafe) var _backgroundRunLoop: CFRunLoop?
     private var backgroundThread: Thread?
 
     private var targetDownAt: Date?
@@ -58,7 +58,7 @@ final class ModifierHoldDetector {
         }
 
         // 通过 Unmanaged 传递 self 给 C 回调
-        let selfPtr = Unmanaged.passRetained(self)
+        let selfPtr = Unmanaged.passUnretained(self)
 
         let eventMask: CGEventMask = (1 << CGEventType.flagsChanged.rawValue)
                                    | (1 << CGEventType.keyDown.rawValue)
@@ -71,7 +71,6 @@ final class ModifierHoldDetector {
             callback: modifierHoldCallback,
             userInfo: selfPtr.toOpaque()
         ) else {
-            selfPtr.release()
             NSLog("[TermKit] ModifierHoldDetector: CGEventTap 创建失败")
             return
         }
@@ -79,7 +78,6 @@ final class ModifierHoldDetector {
         _machPort = port
 
         guard let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, port, 0) else {
-            selfPtr.release()
             CGEvent.tapEnable(tap: port, enable: false)
             _machPort = nil
             NSLog("[TermKit] ModifierHoldDetector: RunLoopSource 创建失败")
@@ -89,12 +87,10 @@ final class ModifierHoldDetector {
         runLoopSource = source
 
         // 在后台线程运行 CGEventTap 的 RunLoop
-        let thread = Thread { [weak self] in
+        let thread = Thread {
             let rl = CFRunLoopGetCurrent()
-            // 把 RunLoop 引用存回主线程可访问的属性
-            DispatchQueue.main.async {
-                self?.backgroundRunLoop = rl
-            }
+            // 同步存储 RunLoop 引用，避免 stop() 时还未赋值的竞态
+            self._backgroundRunLoop = rl
             CFRunLoopAddSource(rl, source, .commonModes)
             CFRunLoopRun()
         }
@@ -113,9 +109,9 @@ final class ModifierHoldDetector {
             _machPort = nil
         }
 
-        if let rl = backgroundRunLoop {
+        if let rl = _backgroundRunLoop {
             CFRunLoopStop(rl)
-            backgroundRunLoop = nil
+            _backgroundRunLoop = nil
         }
 
         runLoopSource = nil
@@ -258,7 +254,7 @@ final class ModifierHoldDetector {
             CGEvent.tapEnable(tap: port, enable: false)
             CFMachPortInvalidate(port)
         }
-        if let rl = backgroundRunLoop {
+        if let rl = _backgroundRunLoop {
             CFRunLoopStop(rl)
         }
     }
