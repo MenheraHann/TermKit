@@ -55,7 +55,10 @@ final class ModifierHoldDetector {
 
         // 权限检查：需要辅助功能权限才能创建 CGEventTap
         if !AXIsProcessTrusted() {
-            showAccessibilityAlert()
+            // 延迟弹窗，避免 app 初始化阶段 runModal 崩溃
+            DispatchQueue.main.async { [weak self] in
+                self?.showAccessibilityAlert()
+            }
             startPermissionPolling()
             return
         }
