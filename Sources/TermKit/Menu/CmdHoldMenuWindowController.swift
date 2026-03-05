@@ -15,27 +15,36 @@ final class CmdHoldMenuWindowController {
     var onRequestCommitSelection: (() -> Void)?
 
     func update(state: CmdHoldMenuState) {
-        guard let hostingView else { return }
+        guard let hostingView, let panel else { return }
         hostingView.rootView = CmdHoldMenuView(
             state: state,
             onSelectIndex: { [weak self] index in self?.onRequestSelectIndex?(index) },
             onCommitSelection: { [weak self] in self?.onRequestCommitSelection?() }
         )
+        // 切换层级时重新调整面板大小
+        let fittingSize = hostingView.fittingSize
+        let newSize = NSSize(width: max(fittingSize.width, 240), height: fittingSize.height)
+        let origin = panel.frame.origin
+        // 保持左上角不动（macOS 坐标系 y 从底部起）
+        let newOrigin = NSPoint(x: origin.x, y: origin.y + panel.frame.height - newSize.height)
+        panel.setFrame(NSRect(origin: newOrigin, size: newSize), display: true, animate: false)
     }
 
     func show(at mouseLocation: NSPoint, state: CmdHoldMenuState) {
         if panel == nil {
             createPanel()
         }
-        guard let panel else { return }
+        guard let panel, let hostingView else { return }
         update(state: state)
 
-        let size = panel.frame.size
-        let origin = NSPoint(x: mouseLocation.x - size.width / 2, y: mouseLocation.y - size.height / 2)
-        panel.setFrameOrigin(origin)
+        // 让面板大小跟随 SwiftUI 内容
+        let fittingSize = hostingView.fittingSize
+        let panelSize = NSSize(width: max(fittingSize.width, 240), height: fittingSize.height)
+        // 面板出现在光标右下方（类似右键菜单的位置）
+        let origin = NSPoint(x: mouseLocation.x, y: mouseLocation.y - panelSize.height)
+        panel.setFrame(NSRect(origin: origin, size: panelSize), display: true)
 
-        // 不抢焦点：用 orderFrontRegardless 而非 makeKeyAndOrderFront
-        // 这样前台窗口（终端）保持聚焦，粘贴命令能正确送达
+        // 不抢焦点
         panel.orderFrontRegardless()
         startKeyMonitor()
     }
@@ -153,8 +162,8 @@ final class CmdHoldMenuWindowController {
 
     private func createPanel() {
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 280, height: 200),
-            styleMask: [.borderless, .fullSizeContentView, .nonactivatingPanel],
+            contentRect: NSRect(x: 0, y: 0, width: 240, height: 100),
+            styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
@@ -163,7 +172,8 @@ final class CmdHoldMenuWindowController {
         panel.isReleasedWhenClosed = false
         panel.isOpaque = false
         panel.backgroundColor = .clear
-        panel.hasShadow = true
+        panel.hasShadow = false  // SwiftUI 视图自带阴影
+        panel.hidesOnDeactivate = false
 
         let placeholder = CmdHoldMenuView(
             state: CmdHoldMenuState(),
@@ -171,8 +181,8 @@ final class CmdHoldMenuWindowController {
             onCommitSelection: { [weak self] in self?.onRequestCommitSelection?() }
         )
         let hosting = NSHostingView(rootView: placeholder)
-        hosting.frame = panel.contentView?.bounds ?? .zero
-        hosting.autoresizingMask = [.width, .height]
+        // 让 hosting view 根据 SwiftUI 内容自适应大小
+        hosting.translatesAutoresizingMaskIntoConstraints = false
         panel.contentView = hosting
 
         self.panel = panel
