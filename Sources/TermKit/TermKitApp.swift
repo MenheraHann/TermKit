@@ -17,10 +17,10 @@ struct TermKitApp: App {
             Button("Show Menu") { model.menu.show() }
             Button("Reload Config") { model.reloadConfig() }
             Divider()
-            Button("Settings…") {
-                if #available(macOS 14, *) {
-                    NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-                } else {
+            if #available(macOS 14, *) {
+                SettingsLink()
+            } else {
+                Button("Settings…") {
                     NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
                 }
             }
