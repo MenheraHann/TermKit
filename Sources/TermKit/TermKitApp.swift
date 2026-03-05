@@ -6,7 +6,10 @@ struct TermKitApp: App {
     @StateObject private var model = TermKitModel()
 
     init() {
-        NSApp.setActivationPolicy(.accessory)
+        // NSApp 在 SwiftUI App.init() 阶段可能尚未就绪，延迟到主线程下一轮执行
+        DispatchQueue.main.async {
+            NSApp?.setActivationPolicy(.accessory)
+        }
     }
 
     var body: some Scene {
