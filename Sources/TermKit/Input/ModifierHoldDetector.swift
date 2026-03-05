@@ -39,6 +39,7 @@ final class ModifierHoldDetector {
     private var scheduledShow: DispatchWorkItem?
     private var menuVisible: Bool = false
     private var wasTargetDown: Bool = false
+    private var permissionPollTimer: DispatchSourceTimer?
 
     // MARK: - 所有修饰键掩码（用于判断"仅目标键按下"）
 
@@ -54,6 +55,7 @@ final class ModifierHoldDetector {
         // 权限检查：需要辅助功能权限才能创建 CGEventTap
         if !AXIsProcessTrusted() {
             showAccessibilityAlert()
+            startPermissionPolling()
             return
         }
 
@@ -103,6 +105,8 @@ final class ModifierHoldDetector {
     }
 
     private func stop() {
+        stopPermissionPolling()
+
         if let port = _machPort {
             CGEvent.tapEnable(tap: port, enable: false)
             CFMachPortInvalidate(port)
@@ -226,6 +230,36 @@ final class ModifierHoldDetector {
         }
         scheduledShow = work
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(holdThresholdMs), execute: work)
+    }
+
+    // MARK: - 权限轮询（用户授权后自动启动 tap）
+
+    /// 弹窗后每 2 秒检查一次权限，授权后自动创建 CGEventTap
+    private func startPermissionPolling() {
+        stopPermissionPolling()
+        let timer = DispatchSource.makeTimerSource(queue: .main)
+        timer.schedule(deadline: .now() + 2, repeating: 2)
+        timer.setEventHandler { [weak self] in
+            Task { @MainActor in
+                guard let self, self.isEnabled else {
+                    self?.stopPermissionPolling()
+                    return
+                }
+                if AXIsProcessTrusted() {
+                    NSLog("[TermKit] ModifierHoldDetector: 检测到辅助功能权限已授予，正在启动...")
+                    self.stopPermissionPolling()
+                    self.start()
+                }
+            }
+        }
+        permissionPollTimer = timer
+        timer.resume()
+        NSLog("[TermKit] ModifierHoldDetector: 开始轮询辅助功能权限...")
+    }
+
+    private func stopPermissionPolling() {
+        permissionPollTimer?.cancel()
+        permissionPollTimer = nil
     }
 
     // MARK: - 辅助功能权限提示
