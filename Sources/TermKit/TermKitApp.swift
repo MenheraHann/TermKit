@@ -14,17 +14,23 @@ struct TermKitApp: App {
 
     var body: some Scene {
         MenuBarExtra("TermKit", systemImage: "command") {
-            Button("Show Menu") { model.menu.show() }
-            Button("Reload Config") { model.reloadConfig() }
+            Toggle("启用快捷菜单", isOn: Binding(
+                get: { model.config.features.enableCmdHoldMenu },
+                set: { value in
+                    var next = model.config
+                    next.features.enableCmdHoldMenu = value
+                    model.saveConfig(next)
+                }
+            ))
             Divider()
             if #available(macOS 14, *) {
-                SettingsLink()
+                SettingsLink { Text("配置…") }
             } else {
-                Button("Settings…") {
+                Button("配置…") {
                     NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
                 }
             }
-            Button("Quit") { NSApp.terminate(nil) }
+            Button("退出 TermKit") { NSApp.terminate(nil) }
         }
         Settings {
             SettingsView()

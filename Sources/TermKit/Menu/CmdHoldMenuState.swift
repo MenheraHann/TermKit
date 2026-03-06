@@ -26,12 +26,18 @@ final class CmdHoldMenuState: ObservableObject {
     var currentItems: [CmdHoldMenuItem] {
         switch level {
         case .root:
-            return [
+            var items = [
                 CmdHoldMenuItem(title: "打开文件夹", kind: .openFolders),
                 CmdHoldMenuItem(title: "选择启动 CLI", kind: .openCLIs),
-                CmdHoldMenuItem(title: "粘贴", kind: .pasteImage),
-                CmdHoldMenuItem(title: "清空输入", kind: .deleteInput)
             ]
+            if !config.commandTemplates.isEmpty {
+                items.append(CmdHoldMenuItem(title: "命令模板", kind: .openTemplates))
+            }
+            items.append(contentsOf: [
+                CmdHoldMenuItem(title: "粘贴", kind: .pasteImage),
+                CmdHoldMenuItem(title: "清空输入", kind: .deleteInput),
+            ])
+            return items
         case .folders:
             var items = config.folders.map { folder in
                 CmdHoldMenuItem(title: folder.title, subtitle: folder.path, kind: .folder(folder))
@@ -61,6 +67,10 @@ final class CmdHoldMenuState: ObservableObject {
             }
             items.append(CmdHoldMenuItem(title: "添加动作…", kind: .addAction(cli.id)))
             return items
+        case .templates:
+            return config.commandTemplates.map { tmpl in
+                CmdHoldMenuItem(title: tmpl.name, subtitle: tmpl.command, kind: .template(tmpl))
+            }
         }
     }
 
@@ -72,6 +82,12 @@ final class CmdHoldMenuState: ObservableObject {
             return "⏎ 粘贴剪贴板里的 文字 或 图片"
         case .deleteInput:
             return "⏎ 清空输入"
+        case .pasteTemplate(let tmpl):
+            let hasUnresolved = tmpl.variables.contains { $0.defaultValue.isEmpty }
+            if hasUnresolved {
+                return "⚠ 模板有未填充的变量，请先在配置中设置默认值"
+            }
+            return "⏎ " + abbreviateCommand(tmpl.resolvedCommand())
         case .showAddFolder, .showAddCLI, .showAddAction, .none:
             return nil
         }
@@ -103,6 +119,8 @@ final class CmdHoldMenuState: ObservableObject {
             return .pasteText(command)
         case .actionCommand(let actionCmd):
             return .pasteText(buildCommand(actionCmd))
+        case .template(let tmpl):
+            return .pasteTemplate(tmpl)
         case .cli:
             // 选中 CLI 但有已选文件夹 → 显示/执行 cd
             if let folder = selectedFolder {
@@ -110,7 +128,7 @@ final class CmdHoldMenuState: ObservableObject {
                 return .pasteText(command)
             }
             return nil
-        case .openFolders, .openCLIs:
+        case .openFolders, .openCLIs, .openTemplates:
             return nil
         }
     }
@@ -154,7 +172,11 @@ final class CmdHoldMenuState: ObservableObject {
             level = .actions
             breadcrumb = (selectedFolder != nil ? ["TermKit", selectedFolder!.title, cli.name] : ["TermKit", cli.name])
             selectedIndex = -1
-        case .pasteImage, .deleteInput, .addFolder, .addCLI, .addAction, .actionCommand:
+        case .openTemplates:
+            level = .templates
+            breadcrumb = ["TermKit", "命令模板"]
+            selectedIndex = -1
+        case .pasteImage, .deleteInput, .addFolder, .addCLI, .addAction, .actionCommand, .template:
             break
         }
     }
@@ -188,7 +210,7 @@ final class CmdHoldMenuState: ObservableObject {
         switch level {
         case .root:
             break
-        case .folders:
+        case .folders, .templates:
             reset()
         case .clis:
             if let folder = selectedFolder {
@@ -258,6 +280,7 @@ enum CmdHoldMenuLevel: Equatable {
     case folders
     case clis
     case actions
+    case templates
 }
 
 enum CmdHoldMenuNavigation: Equatable {
@@ -276,6 +299,7 @@ struct CmdHoldMenuItem: Identifiable, Equatable {
     enum Kind: Equatable {
         case openFolders
         case openCLIs
+        case openTemplates
         case pasteImage
         case deleteInput
         case addFolder
@@ -284,6 +308,7 @@ struct CmdHoldMenuItem: Identifiable, Equatable {
         case folder(FolderEntry)
         case cli(CLIEntry)
         case actionCommand(String)
+        case template(CommandTemplate)
     }
 }
 
@@ -291,6 +316,7 @@ enum CmdHoldMenuConfirmedAction: Equatable {
     case pasteText(String)
     case pasteImagePath
     case deleteInput
+    case pasteTemplate(CommandTemplate)
     case showAddFolder
     case showAddCLI
     case showAddAction(UUID)

@@ -136,7 +136,7 @@ struct CmdHoldMenuView: View {
     /// 判断菜单项是否有子菜单（显示箭头）
     private func hasSubmenu(_ item: CmdHoldMenuItem) -> Bool {
         switch item.kind {
-        case .openFolders, .openCLIs, .folder, .cli:
+        case .openFolders, .openCLIs, .openTemplates, .folder, .cli:
             return true
         default:
             return false

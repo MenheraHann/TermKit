@@ -36,6 +36,7 @@ struct TermKitConfig: Codable, Equatable {
     var folders: [FolderEntry]
     var clis: [CLIEntry]
     var imagePaste: ImagePasteConfig
+    var commandTemplates: [CommandTemplate]
 
     static let defaultValue = TermKitConfig(
         version: 1,
@@ -43,8 +44,39 @@ struct TermKitConfig: Codable, Equatable {
         timing: Timing(holdThresholdMs: 300, clipboardRestoreDelayMs: 200),
         folders: [],
         clis: CLIEntry.defaultCLIs,
-        imagePaste: ImagePasteConfig(saveDirectory: "Library/Application Support/TermKit/Images")
+        imagePaste: ImagePasteConfig(saveDirectory: "Library/Application Support/TermKit/Images"),
+        commandTemplates: []
     )
+
+    // 向后兼容：旧 config.json 没有 commandTemplates 字段时使用空数组
+    init(
+        version: Int,
+        features: Features,
+        timing: Timing,
+        folders: [FolderEntry],
+        clis: [CLIEntry],
+        imagePaste: ImagePasteConfig,
+        commandTemplates: [CommandTemplate] = []
+    ) {
+        self.version = version
+        self.features = features
+        self.timing = timing
+        self.folders = folders
+        self.clis = clis
+        self.imagePaste = imagePaste
+        self.commandTemplates = commandTemplates
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        version = try container.decode(Int.self, forKey: .version)
+        features = try container.decode(Features.self, forKey: .features)
+        timing = try container.decode(Timing.self, forKey: .timing)
+        folders = try container.decode([FolderEntry].self, forKey: .folders)
+        clis = try container.decode([CLIEntry].self, forKey: .clis)
+        imagePaste = try container.decode(ImagePasteConfig.self, forKey: .imagePaste)
+        commandTemplates = try container.decodeIfPresent([CommandTemplate].self, forKey: .commandTemplates) ?? []
+    }
 
     struct Features: Codable, Equatable {
         var enableCmdHoldMenu: Bool
@@ -196,5 +228,70 @@ struct CLIAction: Codable, Equatable, Identifiable {
 
 struct ImagePasteConfig: Codable, Equatable {
     var saveDirectory: String
+}
+
+/// 命令模板：支持 {变量} 占位符的预设命令
+struct CommandTemplate: Codable, Equatable, Identifiable {
+    var id: UUID
+    var name: String              // 模板名称，如 "Git checkout"
+    var command: String            // 命令，如 "git checkout {branch}"
+    var variables: [TemplateVariable]  // 从 command 中解析的变量列表
+
+    init(id: UUID = UUID(), name: String, command: String, variables: [TemplateVariable] = []) {
+        self.id = id
+        self.name = name
+        self.command = command
+        self.variables = variables
+    }
+
+    /// 用正则 \{([^}]+)\} 从 command 中解析占位符，同步 variables 列表
+    mutating func syncVariables() {
+        let pattern = try! NSRegularExpression(pattern: "\\{([^}]+)\\}")
+        let range = NSRange(command.startIndex..., in: command)
+        let matches = pattern.matches(in: command, range: range)
+        let placeholders = matches.compactMap { match -> String? in
+            guard let r = Range(match.range(at: 1), in: command) else { return nil }
+            return String(command[r])
+        }
+        // 去重：同一占位符出现多次只保留一个变量条目
+        var seen = Set<String>()
+        let uniquePlaceholders = placeholders.filter { seen.insert($0).inserted }
+        // 保留已有变量的 label/defaultValue，新增的用空值
+        var updated: [TemplateVariable] = []
+        for ph in uniquePlaceholders {
+            if let existing = variables.first(where: { $0.placeholder == ph }) {
+                updated.append(existing)
+            } else {
+                updated.append(TemplateVariable(placeholder: ph))
+            }
+        }
+        variables = updated
+    }
+
+    /// 替换变量生成最终命令（有默认值的替换，无默认值的保留原样）
+    func resolvedCommand() -> String {
+        var result = command
+        for v in variables {
+            if !v.defaultValue.isEmpty {
+                result = result.replacingOccurrences(of: "{\(v.placeholder)}", with: v.defaultValue)
+            }
+        }
+        return result
+    }
+}
+
+/// 模板变量
+struct TemplateVariable: Codable, Equatable, Identifiable {
+    var id: UUID
+    var placeholder: String       // 占位符名（不含花括号），如 "branch"
+    var label: String             // 显示名称，如 "分支名"
+    var defaultValue: String      // 默认值
+
+    init(id: UUID = UUID(), placeholder: String, label: String = "", defaultValue: String = "") {
+        self.id = id
+        self.placeholder = placeholder
+        self.label = label
+        self.defaultValue = defaultValue
+    }
 }
 

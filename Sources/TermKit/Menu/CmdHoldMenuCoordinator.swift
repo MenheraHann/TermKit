@@ -137,6 +137,18 @@ final class CmdHoldMenuCoordinator: ObservableObject {
                 self.configStore.save(next)
                 self.applyConfig(next)
             }
+        case .pasteTemplate(let tmpl):
+            // 检查是否有未填充的变量（无默认值）
+            let hasUnresolved = tmpl.variables.contains { $0.defaultValue.isEmpty }
+            if hasUnresolved {
+                NSSound.beep()
+                hide()
+            } else {
+                let resolved = tmpl.resolvedCommand()
+                let delayMs = config.timing.clipboardRestoreDelayMs
+                paster.pasteTextWithClipboardRestore(resolved, restoreDelayMs: delayMs)
+                hide()
+            }
         case .showAddAction(let cliID):
             hide()
             window.presentAddAction { [weak self] title, command in
