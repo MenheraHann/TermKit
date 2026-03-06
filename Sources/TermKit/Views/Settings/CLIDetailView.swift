@@ -1,76 +1,77 @@
 import SwiftUI
 
-/// 单个 CLI 工具的编辑表单
+/// 单个 CLI 工具的编辑表单（内联编辑风格）
 struct CLIDetailView: View {
     @EnvironmentObject private var model: TermKitModel
     let cliIndex: Int
 
-    @State private var selectedActionID: UUID?
-
-    private var cli: CLIEntry { model.config.clis[cliIndex] }
+    private var cli: CLIEntry {
+        guard model.config.clis.indices.contains(cliIndex) else { return CLIEntry(name: "") }
+        return model.config.clis[cliIndex]
+    }
 
     var body: some View {
-        ScrollView {
-            Form {
-                Section("基本信息") {
-                    TextField("名称", text: cliBinding(\.name))
-                }
+        Form {
+            Section("基本信息") {
+                TextField("工具名称", text: cliBinding(\.name))
+                    .textFieldStyle(.roundedBorder)
+            }
 
-                Section("命令") {
-                    TextField("启动命令", text: optionalBinding(\.startCommand), prompt: Text("如 claude"))
-                    TextField("继续命令", text: optionalBinding(\.continueCommand), prompt: Text("如 claude --continue"))
-                    TextField("恢复命令", text: optionalBinding(\.resumeCommand), prompt: Text("如 claude --resume"))
-                }
-
-                Section("标签（菜单中的显示名）") {
-                    TextField("启动标签", text: optionalBinding(\.startLabel), prompt: Text("新建对话"))
-                    TextField("继续标签", text: optionalBinding(\.continueLabel), prompt: Text("继续上次"))
-                    TextField("恢复标签", text: optionalBinding(\.resumeLabel), prompt: Text("恢复对话"))
-                }
-
-                Section("自定义动作") {
-                    if cli.customActions.isEmpty {
-                        Text("暂无自定义动作")
-                            .foregroundStyle(.secondary)
-                            .font(.caption)
-                    } else {
-                        ForEach(Array(cli.customActions.enumerated()), id: \.element.id) { actionIdx, action in
+            Section {
+                if cli.actions.isEmpty {
+                    Text("暂无动作")
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding()
+                } else {
+                    ForEach(Array(cli.actions.enumerated()), id: \.element.id) { idx, action in
+                        VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(action.title).fontWeight(.medium)
-                                    Text(action.command)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
+                                Image(systemName: "command")
+                                    .foregroundStyle(.secondary)
+                                TextField("动作名称", text: actionBinding(idx, \.title))
+                                    .textFieldStyle(.plain)
+                                    .fontWeight(.medium)
                                 Spacer()
                                 Button(role: .destructive) {
-                                    removeAction(at: actionIdx)
+                                    deleteAction(at: idx)
                                 } label: {
                                     Image(systemName: "trash")
-                                        .foregroundStyle(.red)
+                                        .frame(width: 28, height: 28)
+                                        .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.borderless)
+                                .help("删除此动作")
                             }
-                        }
-                        .onMove(perform: moveAction)
-                    }
 
-                    Button(action: addAction) {
-                        Label("添加动作", systemImage: "plus")
+                            TextField("命令", text: actionBinding(idx, \.command))
+                                .textFieldStyle(.roundedBorder)
+                                .font(.system(.caption, design: .monospaced))
+                        }
+                        .padding(.vertical, 4)
                     }
+                    .onMove(perform: moveAction)
+                }
+            } header: {
+                HStack {
+                    Text("动作列表")
+                    Spacer()
+                    Button("添加动作") { addAction() }
+                        .font(.caption)
                 }
             }
-            .formStyle(.grouped)
-            .padding()
         }
+        .formStyle(.grouped)
+        .padding()
     }
 
     // MARK: - Bindings
 
     private func cliBinding<T>(_ keyPath: WritableKeyPath<CLIEntry, T>) -> Binding<T> {
         Binding(
-            get: { model.config.clis[cliIndex][keyPath: keyPath] },
+            get: { cli[keyPath: keyPath] },
             set: { value in
+                guard model.config.clis.indices.contains(cliIndex) else { return }
                 var next = model.config
                 next.clis[cliIndex][keyPath: keyPath] = value
                 model.saveConfig(next)
@@ -78,13 +79,18 @@ struct CLIDetailView: View {
         )
     }
 
-    /// 将 Optional<String> 字段绑定为非空 String（空字符串 → nil）
-    private func optionalBinding(_ keyPath: WritableKeyPath<CLIEntry, String?>) -> Binding<String> {
+    private func actionBinding(_ actionIdx: Int, _ keyPath: WritableKeyPath<CLIAction, String>) -> Binding<String> {
         Binding(
-            get: { model.config.clis[cliIndex][keyPath: keyPath] ?? "" },
+            get: {
+                guard model.config.clis.indices.contains(cliIndex),
+                      model.config.clis[cliIndex].actions.indices.contains(actionIdx) else { return "" }
+                return model.config.clis[cliIndex].actions[actionIdx][keyPath: keyPath]
+            },
             set: { value in
+                guard model.config.clis.indices.contains(cliIndex),
+                      model.config.clis[cliIndex].actions.indices.contains(actionIdx) else { return }
                 var next = model.config
-                next.clis[cliIndex][keyPath: keyPath] = value.isEmpty ? nil : value
+                next.clis[cliIndex].actions[actionIdx][keyPath: keyPath] = value
                 model.saveConfig(next)
             }
         )
@@ -93,20 +99,24 @@ struct CLIDetailView: View {
     // MARK: - 动作管理
 
     private func addAction() {
+        guard model.config.clis.indices.contains(cliIndex) else { return }
         var next = model.config
-        next.clis[cliIndex].customActions.append(CLIAction(title: "新动作", command: ""))
+        next.clis[cliIndex].actions.append(CLIAction(title: "新动作", command: ""))
         model.saveConfig(next)
     }
 
-    private func removeAction(at actionIdx: Int) {
+    private func deleteAction(at index: Int) {
+        guard model.config.clis.indices.contains(cliIndex),
+              model.config.clis[cliIndex].actions.indices.contains(index) else { return }
         var next = model.config
-        next.clis[cliIndex].customActions.remove(at: actionIdx)
+        next.clis[cliIndex].actions.remove(at: index)
         model.saveConfig(next)
     }
 
     private func moveAction(from source: IndexSet, to destination: Int) {
+        guard model.config.clis.indices.contains(cliIndex) else { return }
         var next = model.config
-        next.clis[cliIndex].customActions.move(fromOffsets: source, toOffset: destination)
+        next.clis[cliIndex].actions.move(fromOffsets: source, toOffset: destination)
         model.saveConfig(next)
     }
 }

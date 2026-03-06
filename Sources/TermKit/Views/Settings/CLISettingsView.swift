@@ -8,13 +8,18 @@ struct CLISettingsView: View {
     private var clis: [CLIEntry] { model.config.clis }
 
     var body: some View {
-        HSplitView {
+        HStack(spacing: 0) {
             // 左侧：CLI 列表
             VStack(spacing: 0) {
                 List(selection: $selectedID) {
                     ForEach(clis) { cli in
-                        Text(cli.name)
-                            .tag(cli.id)
+                        HStack {
+                            Image(systemName: "terminal")
+                                .foregroundStyle(.secondary)
+                            Text(cli.name)
+                            Spacer()
+                        }
+                        .tag(cli.id)
                     }
                     .onMove(perform: moveCLI)
                     .onDelete(perform: deleteCLI)
@@ -23,38 +28,50 @@ struct CLISettingsView: View {
 
                 Divider()
 
-                HStack(spacing: 4) {
+                // 统一底部工具栏
+                HStack(spacing: 12) {
                     Button(action: addCLI) {
                         Image(systemName: "plus")
+                            .frame(width: 28, height: 28)
+                            .contentShape(Rectangle())
                     }
-                    .buttonStyle(.borderless)
+                    .help("添加 CLI 工具")
 
                     Button(action: removeSelected) {
                         Image(systemName: "minus")
+                            .frame(width: 28, height: 28)
+                            .contentShape(Rectangle())
                     }
-                    .buttonStyle(.borderless)
                     .disabled(selectedID == nil)
+                    .help("移除选中")
 
                     Spacer()
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
+                .buttonStyle(.borderless)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(.bar)
             }
-            .frame(minWidth: 140, idealWidth: 160, maxWidth: 200)
+            .frame(maxWidth: .infinity)
+
+            Divider()
 
             // 右侧：详情编辑
             if let id = selectedID, let idx = clis.firstIndex(where: { $0.id == id }) {
                 CLIDetailView(cliIndex: idx)
                     .environmentObject(model)
-                    .id(id) // selectedID 变化时重建视图
+                    .id(id)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                VStack {
-                    Spacer()
-                    Text("选择一个 CLI 工具进行编辑")
+                VStack(spacing: 16) {
+                    Image(systemName: "terminal.fill")
+                        .font(.system(size: 48))
+                        .foregroundStyle(.tertiary)
+                    Text("选择或创建一个 CLI 工具")
                         .foregroundStyle(.secondary)
-                    Spacer()
                 }
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(nsColor: .controlBackgroundColor))
             }
         }
     }
@@ -73,8 +90,8 @@ struct CLISettingsView: View {
         guard let id = selectedID else { return }
         var next = model.config
         next.clis.removeAll { $0.id == id }
+        selectedID = nil              // 先清选中，避免 Binding 越界
         model.saveConfig(next)
-        selectedID = nil
     }
 
     private func moveCLI(from source: IndexSet, to destination: Int) {
@@ -87,7 +104,7 @@ struct CLISettingsView: View {
         var next = model.config
         let removing = offsets.map { next.clis[$0].id }
         next.clis.remove(atOffsets: offsets)
+        if let id = selectedID, removing.contains(id) { selectedID = nil }  // 先清选中
         model.saveConfig(next)
-        if let id = selectedID, removing.contains(id) { selectedID = nil }
     }
 }

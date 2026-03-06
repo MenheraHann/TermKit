@@ -52,18 +52,8 @@ final class CmdHoldMenuState: ObservableObject {
             return items
         case .actions:
             guard let cli = selectedCLI else { return [] }
-            var items: [CmdHoldMenuItem] = []
-            if let cmd = cli.startCommand, !cmd.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                items.append(CmdHoldMenuItem(title: cli.startLabel ?? "启动", subtitle: cmd, kind: .actionCommand(cmd)))
-            }
-            if let cmd = cli.continueCommand, !cmd.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                items.append(CmdHoldMenuItem(title: cli.continueLabel ?? "继续上次", subtitle: cmd, kind: .actionCommand(cmd)))
-            }
-            if let cmd = cli.resumeCommand, !cmd.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                items.append(CmdHoldMenuItem(title: cli.resumeLabel ?? "恢复对话", subtitle: cmd, kind: .actionCommand(cmd)))
-            }
-            for action in cli.customActions {
-                items.append(CmdHoldMenuItem(title: action.title, subtitle: action.command, kind: .actionCommand(action.command)))
+            var items = cli.actions.map { action in
+                CmdHoldMenuItem(title: action.title, subtitle: action.command, kind: .actionCommand(action.command))
             }
             items.append(CmdHoldMenuItem(title: "添加动作…", kind: .addAction(cli.id)))
             return items

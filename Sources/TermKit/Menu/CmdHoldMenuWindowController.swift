@@ -65,37 +65,12 @@ final class CmdHoldMenuWindowController {
     func presentAddCLI(onSave: @escaping (CLIEntry) -> Void) {
         let alert = NSAlert()
         alert.messageText = "添加 CLI"
-        alert.informativeText = "输入 CLI 名称与命令模板（可留空）"
+        alert.informativeText = "输入 CLI 名称（动作可在设置界面中添加）"
 
-        let stack = NSStackView()
-        stack.orientation = .vertical
-        stack.spacing = 8
-        stack.alignment = .leading
-        stack.translatesAutoresizingMaskIntoConstraints = false
+        let name = NSTextField(frame: NSRect(x: 0, y: 0, width: 360, height: 24))
+        name.placeholderString = "Name (required)"
 
-        func row(_ label: String) -> NSTextField {
-            let tf = NSTextField(frame: NSRect(x: 0, y: 0, width: 360, height: 24))
-            tf.placeholderString = label
-            return tf
-        }
-
-        let name = row("Name (required)")
-        let start = row("Start command (optional)")
-        let cont = row("Continue command (optional)")
-        let resume = row("Resume command (optional)")
-
-        [name, start, cont, resume].forEach { stack.addArrangedSubview($0) }
-
-        let container = NSView(frame: NSRect(x: 0, y: 0, width: 380, height: 140))
-        container.addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            stack.topAnchor.constraint(equalTo: container.topAnchor),
-            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor)
-        ])
-
-        alert.accessoryView = container
+        alert.accessoryView = name
         alert.addButton(withTitle: "保存")
         alert.addButton(withTitle: "取消")
         let response = alert.runModal()
@@ -103,13 +78,7 @@ final class CmdHoldMenuWindowController {
 
         let nameText = name.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !nameText.isEmpty else { return }
-        let entry = CLIEntry(
-            name: nameText,
-            startCommand: start.stringValue.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
-            continueCommand: cont.stringValue.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
-            resumeCommand: resume.stringValue.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
-        )
-        onSave(entry)
+        onSave(CLIEntry(name: nameText))
     }
 
     func presentAddAction(onSave: @escaping (String, String) -> Void) {
@@ -214,9 +183,3 @@ final class CmdHoldMenuWindowController {
 
 }
 
-private extension String {
-    var nilIfEmpty: String? {
-        let t = trimmingCharacters(in: .whitespacesAndNewlines)
-        return t.isEmpty ? nil : t
-    }
-}

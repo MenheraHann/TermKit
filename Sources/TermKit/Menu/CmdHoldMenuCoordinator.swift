@@ -155,7 +155,7 @@ final class CmdHoldMenuCoordinator: ObservableObject {
                 guard let self else { return }
                 var next = config
                 guard let idx = next.clis.firstIndex(where: { $0.id == cliID }) else { return }
-                next.clis[idx].customActions.append(CLIAction(title: title, command: command))
+                next.clis[idx].actions.append(CLIAction(title: title, command: command))
                 self.configStore.save(next)
                 self.applyConfig(next)
             }

@@ -8,19 +8,21 @@ struct CommandTemplatesSettingsView: View {
     private var templates: [CommandTemplate] { model.config.commandTemplates }
 
     var body: some View {
-        HSplitView {
+        HStack(spacing: 0) {
             // 左侧：模板列表
             VStack(spacing: 0) {
                 List(selection: $selectedID) {
                     ForEach(templates) { tmpl in
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: 4) {
                             Text(tmpl.name)
                                 .fontWeight(.medium)
                             Text(tmpl.command)
-                                .font(.caption)
+                                .font(.caption.monospaced())
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
+                                .truncationMode(.tail)
                         }
+                        .padding(.vertical, 2)
                         .tag(tmpl.id)
                     }
                     .onMove(perform: moveTemplate)
@@ -30,38 +32,49 @@ struct CommandTemplatesSettingsView: View {
 
                 Divider()
 
-                HStack(spacing: 4) {
+                HStack(spacing: 12) {
                     Button(action: addTemplate) {
                         Image(systemName: "plus")
+                            .frame(width: 28, height: 28)
+                            .contentShape(Rectangle())
                     }
-                    .buttonStyle(.borderless)
+                    .help("添加模板")
 
                     Button(action: removeSelected) {
                         Image(systemName: "minus")
+                            .frame(width: 28, height: 28)
+                            .contentShape(Rectangle())
                     }
-                    .buttonStyle(.borderless)
                     .disabled(selectedID == nil)
+                    .help("移除选中")
 
                     Spacer()
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
+                .buttonStyle(.borderless)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(.bar)
             }
-            .frame(minWidth: 140, idealWidth: 180, maxWidth: 220)
+            .frame(maxWidth: .infinity)
+
+            Divider()
 
             // 右侧：详情编辑
             if let id = selectedID, let idx = templates.firstIndex(where: { $0.id == id }) {
                 CommandTemplateDetailView(templateIndex: idx)
                     .environmentObject(model)
                     .id(id)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                VStack {
-                    Spacer()
-                    Text("选择一个模板进行编辑")
+                VStack(spacing: 16) {
+                    Image(systemName: "doc.text.fill")
+                        .font(.system(size: 48))
+                        .foregroundStyle(.tertiary)
+                    Text("选择或创建一个命令模板")
                         .foregroundStyle(.secondary)
-                    Spacer()
                 }
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(nsColor: .controlBackgroundColor))
             }
         }
     }
@@ -80,8 +93,8 @@ struct CommandTemplatesSettingsView: View {
         guard let id = selectedID else { return }
         var next = model.config
         next.commandTemplates.removeAll { $0.id == id }
+        selectedID = nil              // 先清选中，避免 Binding 越界
         model.saveConfig(next)
-        selectedID = nil
     }
 
     private func moveTemplate(from source: IndexSet, to destination: Int) {
@@ -94,7 +107,7 @@ struct CommandTemplatesSettingsView: View {
         var next = model.config
         let removing = offsets.map { next.commandTemplates[$0].id }
         next.commandTemplates.remove(atOffsets: offsets)
+        if let id = selectedID, removing.contains(id) { selectedID = nil }  // 先清选中
         model.saveConfig(next)
-        if let id = selectedID, removing.contains(id) { selectedID = nil }
     }
 }

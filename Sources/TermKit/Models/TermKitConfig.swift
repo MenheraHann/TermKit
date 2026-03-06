@@ -116,101 +116,89 @@ struct FolderEntry: Codable, Equatable, Identifiable {
 struct CLIEntry: Codable, Equatable, Identifiable {
     var id: UUID
     var name: String
-    var startCommand: String?
-    var continueCommand: String?
-    var resumeCommand: String?
-    var customActions: [CLIAction]
-    var startLabel: String?
-    var continueLabel: String?
-    var resumeLabel: String?
+    var actions: [CLIAction]
 
-    init(
-        id: UUID = UUID(),
-        name: String,
-        startCommand: String? = nil,
-        continueCommand: String? = nil,
-        resumeCommand: String? = nil,
-        customActions: [CLIAction] = [],
-        startLabel: String? = nil,
-        continueLabel: String? = nil,
-        resumeLabel: String? = nil
-    ) {
+    init(id: UUID = UUID(), name: String, actions: [CLIAction] = []) {
         self.id = id
         self.name = name
-        self.startCommand = startCommand
-        self.continueCommand = continueCommand
-        self.resumeCommand = resumeCommand
-        self.customActions = customActions
-        self.startLabel = startLabel
-        self.continueLabel = continueLabel
-        self.resumeLabel = resumeLabel
+        self.actions = actions
+    }
+
+    // 向后兼容解码：先尝试新格式，失败则回退读取旧字段并转换
+    private enum CodingKeys: String, CodingKey {
+        case id, name, actions
+        // 旧字段
+        case startCommand, continueCommand, resumeCommand
+        case startLabel, continueLabel, resumeLabel
+        case customActions
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        name = try container.decode(String.self, forKey: .name)
+
+        // 优先解码新格式
+        if let newActions = try container.decodeIfPresent([CLIAction].self, forKey: .actions) {
+            actions = newActions
+        } else {
+            // 回退读取旧字段
+            var migrated: [CLIAction] = []
+            let startCmd = try container.decodeIfPresent(String.self, forKey: .startCommand)
+            let startLabel = try container.decodeIfPresent(String.self, forKey: .startLabel)
+            if let cmd = startCmd, !cmd.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                migrated.append(CLIAction(title: startLabel ?? "启动", command: cmd))
+            }
+            let contCmd = try container.decodeIfPresent(String.self, forKey: .continueCommand)
+            let contLabel = try container.decodeIfPresent(String.self, forKey: .continueLabel)
+            if let cmd = contCmd, !cmd.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                migrated.append(CLIAction(title: contLabel ?? "继续上次", command: cmd))
+            }
+            let resumeCmd = try container.decodeIfPresent(String.self, forKey: .resumeCommand)
+            let resumeLabel = try container.decodeIfPresent(String.self, forKey: .resumeLabel)
+            if let cmd = resumeCmd, !cmd.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                migrated.append(CLIAction(title: resumeLabel ?? "恢复对话", command: cmd))
+            }
+            let oldCustom = try container.decodeIfPresent([CLIAction].self, forKey: .customActions) ?? []
+            migrated.append(contentsOf: oldCustom)
+            actions = migrated
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(actions, forKey: .actions)
     }
 
     static let defaultCLIs: [CLIEntry] = [
-        CLIEntry(
-            name: "Claude Code",
-            startCommand: "claude",
-            continueCommand: "claude --continue",
-            resumeCommand: "claude --resume",
-            customActions: [],
-            startLabel: "新建对话",
-            continueLabel: "继续上次对话",
-            resumeLabel: "恢复历史对话"
-        ),
-        CLIEntry(
-            name: "OpenAI Codex",
-            startCommand: "codex",
-            continueCommand: nil,
-            resumeCommand: nil,
-            customActions: [
-                CLIAction(title: "Suggest", command: "codex --suggest"),
-                CLIAction(title: "Auto Edit", command: "codex --auto-edit"),
-                CLIAction(title: "Full Auto", command: "codex --full-auto")
-            ],
-            startLabel: "启动"
-        ),
-        CLIEntry(
-            name: "Gemini CLI",
-            startCommand: "gemini",
-            continueCommand: nil,
-            resumeCommand: nil,
-            customActions: [],
-            startLabel: "启动"
-        ),
-        CLIEntry(
-            name: "Aider",
-            startCommand: "aider",
-            continueCommand: "aider --restore-chat-history",
-            resumeCommand: nil,
-            customActions: [],
-            startLabel: "启动",
-            continueLabel: "恢复聊天记录"
-        ),
-        CLIEntry(
-            name: "OpenCode",
-            startCommand: "opencode",
-            continueCommand: "opencode --continue",
-            resumeCommand: nil,
-            customActions: [],
-            startLabel: "启动",
-            continueLabel: "继续上次"
-        ),
-        CLIEntry(
-            name: "OpenClaw",
-            startCommand: nil,
-            continueCommand: nil,
-            resumeCommand: nil,
-            customActions: [
-                CLIAction(title: "Open TUI", command: "openclaw tui")
-            ]
-        ),
-        CLIEntry(
-            name: "GitHub Copilot CLI",
-            startCommand: nil,
-            continueCommand: nil,
-            resumeCommand: nil,
-            customActions: []
-        )
+        CLIEntry(name: "Claude Code", actions: [
+            CLIAction(title: "新建对话", command: "claude"),
+            CLIAction(title: "继续上次对话", command: "claude --continue"),
+            CLIAction(title: "恢复历史对话", command: "claude --resume"),
+        ]),
+        CLIEntry(name: "OpenAI Codex", actions: [
+            CLIAction(title: "启动", command: "codex"),
+            CLIAction(title: "Suggest", command: "codex --suggest"),
+            CLIAction(title: "Auto Edit", command: "codex --auto-edit"),
+            CLIAction(title: "Full Auto", command: "codex --full-auto"),
+        ]),
+        CLIEntry(name: "Gemini CLI", actions: [
+            CLIAction(title: "启动", command: "gemini"),
+        ]),
+        CLIEntry(name: "Aider", actions: [
+            CLIAction(title: "启动", command: "aider"),
+            CLIAction(title: "恢复聊天记录", command: "aider --restore-chat-history"),
+        ]),
+        CLIEntry(name: "OpenCode", actions: [
+            CLIAction(title: "启动", command: "opencode"),
+            CLIAction(title: "继续上次", command: "opencode --continue"),
+        ]),
+        CLIEntry(name: "OpenClaw", actions: [
+            CLIAction(title: "Open TUI", command: "openclaw tui"),
+        ]),
+        CLIEntry(name: "GitHub Copilot CLI", actions: []),
     ]
 }
 

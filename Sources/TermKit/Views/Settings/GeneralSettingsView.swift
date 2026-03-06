@@ -8,8 +8,9 @@ struct GeneralSettingsView: View {
         Form {
             Section("快捷菜单") {
                 Toggle("启用快捷菜单", isOn: binding(\.features.enableCmdHoldMenu))
+                    .toggleStyle(.switch)
 
-                Picker("触发键", selection: binding(\.features.triggerKey)) {
+                Picker("触发修饰键", selection: binding(\.features.triggerKey)) {
                     ForEach(TriggerModifierKey.allCases, id: \.self) { key in
                         Text(key.displayName).tag(key)
                     }
@@ -18,46 +19,40 @@ struct GeneralSettingsView: View {
             }
 
             Section("时间参数") {
-                HStack {
-                    Text("长按阈值")
-                    Spacer()
-                    Stepper(
-                        value: binding(\.timing.holdThresholdMs),
-                        in: 150...800,
-                        step: 50
-                    ) {
+                LabeledContent("长按阈值") {
+                    HStack {
                         Text("\(model.config.timing.holdThresholdMs) ms")
                             .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                        Stepper("", value: binding(\.timing.holdThresholdMs), in: 150...800, step: 50)
+                            .labelsHidden()
                     }
                 }
 
-                HStack {
-                    Text("剪贴板恢复延迟")
-                    Spacer()
-                    Stepper(
-                        value: binding(\.timing.clipboardRestoreDelayMs),
-                        in: 0...1000,
-                        step: 50
-                    ) {
+                LabeledContent("剪贴板恢复延迟") {
+                    HStack {
                         Text("\(model.config.timing.clipboardRestoreDelayMs) ms")
                             .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                        Stepper("", value: binding(\.timing.clipboardRestoreDelayMs), in: 0...1000, step: 50)
+                            .labelsHidden()
                     }
                 }
             }
 
             Section("图片") {
-                HStack {
-                    Text("图片保存目录")
-                    Spacer()
+                VStack(alignment: .leading) {
+                    Text("保存目录")
                     TextField("路径", text: binding(\.imagePaste.saveDirectory))
                         .textFieldStyle(.roundedBorder)
-                        .frame(maxWidth: 250)
                 }
             }
 
             Section {
-                Button("打开配置文件夹") {
-                    ConfigStore.openConfigFolderInFinder()
+                LabeledContent("配置文件") {
+                    Button("在 Finder 中显示") {
+                        ConfigStore.openConfigFolderInFinder()
+                    }
                 }
             }
         }
