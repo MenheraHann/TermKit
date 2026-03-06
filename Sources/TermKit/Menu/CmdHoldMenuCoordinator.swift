@@ -21,12 +21,16 @@ final class CmdHoldMenuCoordinator: ObservableObject {
         detector.onConfirm = { [weak self] in self?.confirm() }
         detector.onCancel = { [weak self] in self?.hide() }
         detector.onNavigate = { [weak self] nav in self?.handle(nav) }
+        detector.onDelete = { [weak self] in self?.handleDelete() }
+        detector.onPaste = { [weak self] in self?.handleSmartPaste() }
+        detector.onNumberKeySelect = { [weak self] index in
+            guard let self, index < self.state.numberedItemCount else { return }
+            self.state.select(index: index)
+            self.commitAndMaybeExecute()
+        }
 
-        window.onRequestConfirm = { [weak self] in self?.confirm() }
-        window.onRequestCancel = { [weak self] in self?.hide() }
-        window.onRequestNavigate = { [weak self] nav in self?.handle(nav) }
         window.onRequestSelectIndex = { [weak self] index in self?.state.select(index: index) }
-        window.onRequestCommitSelection = { [weak self] in self?.state.commitSelection() }
+        window.onRequestCommitSelection = { [weak self] in self?.commitAndMaybeExecute() }
     }
 
     func applyConfig(_ config: TermKitConfig) {
@@ -39,20 +43,69 @@ final class CmdHoldMenuCoordinator: ObservableObject {
     }
 
     func show() {
+        detector.menuDidShow()
         state.reset()
         window.show(at: NSEvent.mouseLocation, state: state)
     }
 
     func hide() {
+        detector.menuDidHide()
         window.hide()
     }
 
     private func handle(_ nav: CmdHoldMenuNavigation) {
-        state.navigate(nav)
-        window.update(state: state)
+        if nav == .forward && state.selectedIndex >= 0 {
+            commitAndMaybeExecute()
+        } else {
+            state.navigate(nav)
+            window.update(state: state)
+        }
+    }
+
+    private func commitAndMaybeExecute() {
+        let levelBefore = state.level
+        state.commitSelection()
+        if state.level == levelBefore, state.currentAction != nil {
+            confirm()
+        } else {
+            window.update(state: state)
+        }
+    }
+
+    private func handleDelete() {
+        if state.level == .root {
+            paster.sendClearLine()
+            hide()
+        } else {
+            state.reset()
+            window.update(state: state)
+        }
+    }
+
+    private func handleSmartPaste() {
+        detector.menuDidHide()
+        let pb = NSPasteboard.general
+        if pb.string(forType: .string) != nil {
+            // 剪贴板有文字 → 直接 ⌘V
+            paster.sendPaste()
+        } else if NSImage(pasteboard: pb) != nil {
+            // 剪贴板有图片 → 保存路径再粘贴
+            guard let url = imagePaster.savePasteboardImage(
+                saveDirectory: config.imagePaste.saveDirectory
+            ) else {
+                NSSound.beep()
+                hide()
+                return
+            }
+            paster.pasteTextWithClipboardRestore(url.path, restoreDelayMs: config.timing.clipboardRestoreDelayMs)
+        } else {
+            NSSound.beep()
+        }
+        hide()
     }
 
     private func confirm() {
+        detector.menuDidHide()
         let action = state.currentAction
         switch action {
         case .pasteText(let text):
@@ -60,17 +113,13 @@ final class CmdHoldMenuCoordinator: ObservableObject {
             paster.pasteTextWithClipboardRestore(text, restoreDelayMs: delayMs)
             hide()
         case .pasteImagePath:
-            guard let imageURL = imagePaster.savePasteboardImage(
-                saveDirectory: config.imagePaste.saveDirectory
-            ) else {
-                NSSound.beep()
-                hide()
-                return
-            }
-            let delayMs = config.timing.clipboardRestoreDelayMs
-            paster.pasteTextWithClipboardRestore(imageURL.path, restoreDelayMs: delayMs)
+            handleSmartPaste()
+            return
+        case .deleteInput:
+            paster.sendClearLine()
             hide()
         case .showAddFolder:
+            hide()
             window.presentAddFolder { [weak self] path in
                 guard let self else { return }
                 var next = config
@@ -80,6 +129,7 @@ final class CmdHoldMenuCoordinator: ObservableObject {
                 self.applyConfig(next)
             }
         case .showAddCLI:
+            hide()
             window.presentAddCLI { [weak self] entry in
                 guard let self else { return }
                 var next = config
@@ -88,6 +138,7 @@ final class CmdHoldMenuCoordinator: ObservableObject {
                 self.applyConfig(next)
             }
         case .showAddAction(let cliID):
+            hide()
             window.presentAddAction { [weak self] title, command in
                 guard let self else { return }
                 var next = config

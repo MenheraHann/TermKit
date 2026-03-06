@@ -1,453 +1,211 @@
-````md
-# PRD：macOS 终端侧边快捷助手（iTerm2/Terminal Snippet Helper）
+# TermKit PRD v2：⌘ 长按分层菜单（Cmd Hold Menu）
+
+## 0. 一句话定位
+TermKit 是一个 macOS 常驻后台的“命令入口”。用户**长按 ⌘** 呼出分层菜单，选择“文件夹 / CLI / 动作”，**松开 ⌘** 即把生成的命令粘贴到终端光标处（不自动回车），并**还原剪贴板**。
+
+---
 
 ## 1. 背景与问题
-很多 CLI 工具把终端当作 AI 聊天窗，界面大、流程重，反而打断开发者心流。我们要做的是一个**极轻量**、**不依赖 AI** 的“快捷查询/命令片段助手”。
+开发者日常反复做三类事：
+1) 切到某个项目目录（`cd`）
+2) 启动或继续某个 CLI（Claude Code / Codex / Gemini / Aider / OpenCode…）
+3) 把素材（尤其图片）落盘后，把路径交给 CLI 读取
 
-### 现有痛点
-1) 命令行操作复杂、参数多、需要记忆  
-2) 文档/文件打开依赖路径输入，不可视化  
-3) 粘贴图片/参考内容不能一键完成（本版本可暂不做或弱化）
-
-### 核心定位
-一个贴在终端旁边（或快捷键呼出）的 macOS 面板，提供：
-- **一键复制**命令到剪贴板（默认）
-- **可选一键执行**：把命令发送到当前 iTerm2 / Terminal 会话执行（用户可关闭）
-
-> 关键原则：**不做 AI**、不做复杂自动化，只做“片段库 + 快捷触发”。
+传统快捷面板/片段库需要“呼出 → 搜索 → 点击”，且会覆盖剪贴板；你希望把交互变成更轻、更快的“按住 ⌘ 就选，松开 ⌘ 就粘贴”。
 
 ---
 
-## 2. 目标与非目标
+## 2. 目标（Goals）
+- G1：长按 ⌘ 后 0~1 秒完成“选文件夹 → cd → 执行 CLI 动作（Start/Continue/Resume/自定义）”。
+- G2：支持鼠标点选、方向键 `↑↓←→`、数字键 `1..9/0` 快速选择、`~`/`` ` `` 返回。
+- G3：松开 ⌘ 即确认并粘贴；不自动回车。
+- G4：粘贴后恢复用户原剪贴板内容（尽量保持所有类型）。
+- G5：文件夹/CLI/动作可在 UI 里配置：可添加/编辑/删除/排序；默认内置一套主流 CLI 模板。
+- G6：提供一级菜单“粘贴图片”：把剪贴板图片保存到固定目录并粘贴该路径。
+- G7：不干扰系统快捷键：用户正常使用 `⌘C/⌘V/⌘Tab/⌘1...` 不应误触发菜单。
 
-### 2.1 产品目标（Goals）
-- G1：用户能在 1-2 秒内通过面板找到常用命令并复制到剪贴板
-- G2：在 iTerm2 上可稳定将命令写入当前 session（可选直接执行）
-- G3：同一套片段库，兼容 iTerm2 与 macOS Terminal.app
-- G4：片段库可由用户本地编辑（JSON/YAML），支持导入导出
-
-### 2.2 非目标（Non-goals）
-- NG1：不做 AI 对话、不做自然语言解析生成命令
-- NG2：不做复杂文件可视化浏览器（可在后续版本扩展）
-- NG3：不做命令输出采集/解析、不接管终端历史
-- NG4：不做云同步/账户体系（MVP 仅本地）
-
----
-
-## 3. 用户与使用场景
-
-### 3.1 目标用户
-- macOS 上使用 iTerm2/Terminal 的开发者、运维、数据工程师、游戏开发者等
-
-### 3.2 典型场景（Jobs To Be Done）
-- “我想快速查一个常用命令，不想翻笔记/文档”
-- “我经常输入同一串 docker/git/grep/find 参数，想一键复制”
-- “我希望选中一个片段后直接写入 iTerm2 执行，减少粘贴步骤（可选）”
+## 3. 非目标（Non-goals）
+- NG1：不自动执行（不模拟回车）。
+- NG2：不做“解析各 CLI 的历史会话列表并在菜单里精确选择某条会话”；仅调用 CLI 自带的 continue/resume（如支持）。
+- NG3：不做图片上传/图片理解；仅做“落盘 + 粘贴路径”。
+- NG4：不做云同步/账号体系（先本地）。
 
 ---
 
-## 4. 产品形态与交互
+## 4. 核心交互（Interaction）
 
-### 4.1 形态（MVP 推荐）
-- **快捷键呼出浮窗**（默认）：
-  - 快捷键：例如 `⌥Space`（可配置）
-  - 浮窗置顶、可拖动、可固定
-- 可选：常驻侧边栏模式（后续）
+### 4.1 触发：长按 ⌘
+- 用户开启“⌘ 长按菜单模式”后生效。
+- 用户按下并持续按住 ⌘ 超过阈值 `T`（默认 300ms）→ 弹出菜单。
+- 仅当 ⌘ 为“单独按住”时触发：若期间出现其他按键或其他修饰键参与（如 `⌘C/⌘Tab/⌘Shift`），则不触发或立刻取消。
 
-### 4.2 核心页面结构
-1) 顶部：
-   - 搜索框（支持 title/tags 模糊匹配）
-   - 当前目标终端显示（iTerm2 / Terminal / 未识别）
-2) 中部：
-   - **一级分类：按 CLI 工具分组**（Claude Code / Codex / Gemini CLI / Aider / OpenClaw / OpenCode / GitHub Copilot CLI / 通用）
-   - **二级分类：按功能分组**（常用命令 / 配置 / 调试 / 项目管理 / 插件&扩展）
-   - 片段条目（Title + tags + 简短描述）
-3) 底部：
-   - 片段详情（多行命令预览）
-   - 按钮：`Copy`（默认显示）、`Run`（可选显示）、`Edit`（打开配置文件/内置编辑）
-   - Danger 提示（若片段标记为危险）
+### 4.2 导航
+- 鼠标：点击进入下一层；叶子节点点击仅高亮，等待松开 ⌘ 确认。
+- 键盘：
+  - `↑/↓`：移动高亮
+  - `→`：进入下一层（或确认进入）
+  - `←`：返回上一层
+  - `Esc`：取消关闭（不粘贴）
+  - `1..9`：选择当前层第 1..9 个选项；若该项可展开则自动进入下一层
+  - `0`：选择当前层第 10 个选项（如存在）；同上
+  - `~` 或 `` ` ``：返回上一层（同 `←`）
 
-### 4.3 关键交互流程
+### 4.3 确认：松开 ⌘
+- 若菜单可见：松开 ⌘ 视为“确认当前高亮路径”，触发动作：
+  - 生成最终命令/文本
+  - 临时写入剪贴板
+  - 切回用户原前台应用
+  - 模拟一次 `⌘V` 粘贴
+  - 延迟 `D`（默认 200ms）后还原剪贴板
+  - 关闭菜单
 
-#### 流程 A：复制（默认）
-1. 用户快捷键呼出面板
-2. 搜索/点击片段
-3. 点击 `Copy`
-4. 命令写入剪贴板
-5. 用户切换到终端粘贴执行
-
-成功标准：复制后提示 “Copied”，并支持再次点击覆盖剪贴板。
-
-#### 流程 B：执行（可选）
-前提：用户在设置中开启 “显示 Run 按钮”
-1. 用户选择片段
-2. 点击 `Run`
-3. 若 dangerLevel = danger/caution，弹出确认（可配置是否跳过）
-4. 将命令发送到当前终端（iTerm2 或 Terminal）
-5. 终端执行（写入文本并回车）
-
-成功标准：在前台终端窗口可见命令被输入并执行。
-
-#### 流程 C：变量替换（MVP 可做）
-片段包含变量，如 `{PORT}`、`{KEY}`、`{FILE}`
-1. 用户点击片段
-2. 系统检测到 variables
-3. 弹出小输入框（或在详情区提供输入栏）
-4. 替换后生成最终命令
-5. Copy/Run 使用替换结果
+例外（不走粘贴）：
+- 若高亮项是“添加文件夹… / 添加 CLI… / 添加动作…”：松开 ⌘ 打开对应配置表单。
 
 ---
 
-## 5. 功能需求（FRD）
+## 5. 一级菜单结构（MVP）
 
-### 5.1 片段库管理
-- FR1：内置默认片段库（首次启动生成/拷贝到用户目录）
-- FR2：从本地文件加载片段（JSON 或 YAML，MVP 先 JSON）
-- FR3：支持导入/导出（将 JSON 文件复制到指定路径即可，UI 可简化为“打开片段目录”）
-- FR4：支持启用/禁用某条片段（字段 enabled）
+1) 打开文件夹
+2) 选择启动 CLI
+3) 粘贴图片
 
-### 5.2 搜索与分类
-- FR5：搜索支持 title / tags / description（模糊）
-- FR6：支持**两级分类**：一级按 CLI 工具（Claude Code / Codex / Gemini CLI / Aider / OpenClaw / OpenCode / GitHub Copilot CLI / 通用），二级按功能（常用命令 / 配置 / 调试 / 项目管理 / 插件&扩展）
-- FR7：最近使用（可选，MVP 可做简单 LRU 10 条）
-
-### 5.3 Copy（必须）
-- FR8：一键 Copy 将最终命令写入 macOS 剪贴板
-- FR9：Copy 后显示 toast/状态提示
-- FR10：支持多行命令完整复制
-
-### 5.4 Run（可选但建议）
-- FR11：支持 iTerm2：将命令写入当前窗口当前 session 并执行
-- FR12：支持 Terminal.app：将命令写入前台窗口 selected tab 并执行
-- FR13：Run 支持多行命令（逐行写入）
-- FR14：Run 支持危险提示确认（按 dangerLevel）
-
-### 5.5 设置（MVP 最少）
-- FR15：快捷键配置（或固定一个默认键）
-- FR16：Run 按钮开关（默认关闭）
-- FR17：危险命令确认开关（默认开启）
-- FR18：片段目录入口（打开 Finder 显示配置文件路径）
+菜单顶部显示面包屑与命令预览（只读）：
+- 面包屑例：`打开文件夹 › MyProject › Claude Code › Resume`
+- 命令预览例：`cd '/path' && claude --resume`
 
 ---
 
-## 6. 非功能需求（NFR）
+## 6. “打开文件夹”菜单
 
-### 6.1 性能
-- NFR1：面板呼出 < 200ms 主观感受（冷启动可放宽）
-- NFR2：搜索过滤 < 50ms（片段数 < 2000 仍流畅）
+### 6.1 列表
+展示用户维护的文件夹列表（可排序/删除），每一项代表一个目录。
 
-### 6.2 稳定性与兼容
-- NFR3：macOS 13+（可调整目标版本）
-- NFR4：iTerm2 最新稳定版为主（AppleScript API 兼容）
-- NFR5：Terminal.app 原生支持
+列表末尾固定存在：
+- `添加文件夹…`
 
-### 6.3 安全与权限
-- NFR6：Run 功能需要 macOS “自动化控制”授权（控制 iTerm2/Terminal）
-- NFR7：不得在未经用户操作下自动执行任何命令（无后台自动化）
-- NFR8：不上传用户命令/片段（本地工具）
+### 6.2 选择效果
+- 选中某个文件夹并进入下一层（`→` 或点击）：进入“选择启动 CLI”（带上下文 `DIR`）。
+- 若用户在该层松开 ⌘（未进入下一层），默认动作是：粘贴 `cd '<DIR>'`。
 
----
+### 6.3 添加文件夹（松开 ⌘ 弹表单）
+表单字段：
+- 文件夹路径（支持 `~` 展开）
 
-## 7. 片段数据结构（建议 JSON Schema）
+校验：
+- 路径存在
+- 为目录
 
-### 7.1 文件路径
-- 默认：`~/Library/Application Support/TermSnippetHelper/snippets.json`
-- 首次启动：若不存在则写入内置默认模板
-
-### 7.2 JSON 结构（示例）
-```json
-{
-  "version": 2,
-  "snippets": [
-    {
-      "id": "claude_start",
-      "title": "启动 Claude Code",
-      "description": "在当前目录启动 Claude Code 对话",
-      "tool": "Claude Code",
-      "category": "常用命令",
-      "tags": ["claude", "start", "chat"],
-      "command": "claude",
-      "variables": null,
-      "dangerLevel": "safe",
-      "enabled": true
-    },
-    {
-      "id": "port_lsof",
-      "title": "查看端口占用",
-      "description": "lsof 查询端口占用进程",
-      "tool": "通用",
-      "category": "调试",
-      "tags": ["port", "lsof", "debug"],
-      "command": "lsof -i :{PORT}",
-      "variables": [
-        { "key": "PORT", "label": "端口号", "default": "3000" }
-      ],
-      "dangerLevel": "safe",
-      "enabled": true
-    }
-  ]
-}
-```
-
-### 7.3 字段说明
-
-* id：唯一标识
-* title：按钮显示
-* description：列表副标题
-* **tool**：所属 CLI 工具（一级分类）— `Claude Code | Codex | Gemini CLI | Aider | OpenClaw | OpenCode | GitHub Copilot CLI | 通用`
-* **category**：功能分类（二级分类）— `常用命令 | 配置 | 调试 | 项目管理 | 插件&扩展`
-* tags：搜索关键词
-* command：支持多行（`\n`）
-* variables：变量列表（MVP 可支持 string 输入）
-* dangerLevel：`safe | caution | danger`
-* enabled：是否显示
+保存后：
+- 立刻出现在“打开文件夹”的列表中
 
 ---
 
-## 8. iTerm2 / Terminal 执行方案（实现要求）
+## 7. “选择启动 CLI”菜单
 
-### 8.1 iTerm2（AppleScript）
+### 7.1 CLI 列表
+展示用户维护的 CLI 列表（可排序/删除/编辑）。
 
-需求：写入“当前窗口当前 session”
+列表末尾固定存在：
+- `添加 CLI…`
 
-* 使用 `write text` 发送命令
-* 多行：分行循环 write
-* 必须处理字符串转义（双引号、反斜杠）
+### 7.2 进入 CLI 的动作层
+选中某个 CLI 并进入下一层 → 展示该 CLI 的动作列表。
 
-执行成功标准：
+动作列表由该 CLI 的配置决定：
+- `仅 cd`（通用）
+- `Start`（如配置了 Start 模板则显示）
+- `Continue`（如配置了 Continue 模板则显示）
+- `Resume`（如配置了 Resume 模板则显示）
+- 自定义动作（用户添加）
 
-* iTerm2 前台窗口可见命令被输入
-* 命令自动回车执行（write text 行为）
+动作列表末尾固定存在：
+- `添加动作…`
 
-### 8.2 Terminal.app（AppleScript）
+### 7.3 命令生成（统一规则）
+最终命令统一用：
+- 有目录：`cd '<DIR>' && <ACTION_COMMAND>`
+- 无目录：`<ACTION_COMMAND>`
 
-* `do script "..."`
-* 在 `front window` 的 `selected tab` 执行
-
-### 8.3 前台终端识别策略
-
-* 读取当前 active application bundle id/name
-* 若为 iTerm2 → iTerm2 脚本；若为 Terminal → Terminal 脚本；否则：
-
-  * Run 按钮置灰/提示“未识别终端”
-  * Copy 仍可用
-
----
-
-## 9. 危险命令策略（MVP 简化规则）
-
-### 9.1 dangerLevel 的来源
-
-* 优先：片段作者在 JSON 中显式标注
-* 可选自动检测（后续）：命令包含以下关键字之一则建议提升等级：
-
-  * danger：`rm -rf`, `sudo`, `dd`, `mkfs`, `:(){ :|:& };:`, `> /dev/`
-  * caution：`kill -9`, `chmod -R`, `chown -R`, `git reset --hard`, `docker system prune`
-
-> MVP 建议：只用显式标注 + 简单关键字提醒即可。
-
-### 9.2 确认弹窗
-
-* danger：默认必须确认
-* caution：默认确认（可在设置关闭）
-* safe：不弹窗
+目录必须做 shell 安全引用（单引号优先）。
 
 ---
 
-## 10. 边界情况与错误处理
+## 8. “粘贴图片”菜单
 
-* E1：iTerm2 未运行 → 点击 Run 时自动 activate 并尝试执行；失败则提示
-* E2：无窗口/无 session → 提示“未找到可用 session”，建议用户打开一个 tab
-* E3：用户未授权自动化权限 → 提示引导到系统设置开启
-* E4：命令包含复杂引号导致脚本失败 → 提示“转义失败”，建议使用 Copy 或简化命令；记录日志便于排查
-* E5：多屏/多终端窗口切换 → 以“前台应用 + 当前窗口”为准（不做后台跟踪）
+### 8.1 行为
+用户在一级菜单高亮“粘贴图片”并松开 ⌘：
+1) 检测剪贴板是否包含图片
+2) 写入固定目录：`~/Library/Application Support/TermKit/Images/`
+3) 文件名默认：`termkit-YYYYMMDD-HHMMSS.png`
+4) 将该图片文件路径粘贴到终端光标处（走同一套“临时覆盖剪贴板 + ⌘V + 还原”流程）
 
----
-
-## 11. 里程碑与开发计划（MVP）
-
-### M0：项目骨架（0.5 天）
-
-* SwiftUI App + 浮窗/Panel
-* 全局快捷键呼出（先固定一个快捷键也可）
-
-### M1：片段加载与展示（1 天）
-
-* 读取 snippets.json
-* 列表/分类/搜索
-* 片段详情展示
-
-### M2：Copy（0.5 天）
-
-* NSPasteboard 写入
-* Toast 提示
-
-### M3：Run iTerm2（1 天）
-
-* AppleScript 调用 iTerm2 write text
-* 多行支持
-* 权限失败提示
-
-### M4：Run Terminal（0.5 天）
-
-* AppleScript do script
-* 基础兼容
-
-### M5：变量替换（1 天）
-
-* 解析 `{VAR}`
-* UI 输入框
-* 替换生成最终命令
-
-### M6：设置与打磨（1 天）
-
-* Run 开关、确认开关
-* 打开片段目录按钮
-* 最近使用（可选）
-
-> MVP 总计：约 5~6 天净开发（视你熟练度调整）
+### 8.2 失败提示
+- 剪贴板无图片：提示“剪贴板没有图片”
+- 写文件失败：提示失败原因
+- 没有辅助功能权限：提示如何授权
 
 ---
 
-## 12. 验收标准（Acceptance Criteria）
+## 9. 配置（Settings / Config）
 
-### Copy
+### 9.1 配置入口
+设置页需要提供清晰入口：
+- 文件夹管理
+- CLI 管理
+- 图片落盘目录（可选：先固定，不做 UI）
+- ⌘ 长按阈值 `T` 与剪贴板恢复延迟 `D`
 
-* AC1：点击 Copy 后剪贴板内容与 command 完全一致（含换行）
-* AC2：搜索/分类不影响 Copy 正确性
+### 9.2 CLI 配置数据模型（MVP）
+每个 CLI 至少包含：
+- `name`：展示名（如 Claude Code）
+- `startCommand`（可选）
+- `continueCommand`（可选）
+- `resumeCommand`（可选）
+- `customActions[]`（可选）：每项包含 `title` + `command`
 
-### Run - iTerm2
+规则：
+- 某动作模板为空 → 菜单里隐藏该动作
+- “Resume”默认只在配置了 `resumeCommand` 的 CLI 上出现
 
-* AC3：iTerm2 前台时，点击 Run 命令会进入当前 session 并执行
-* AC4：多行命令可按行执行（顺序正确）
-* AC5：无权限时有明确提示与引导
+### 9.3 默认内置 CLI（可编辑）
+MVP 内置一套默认模板，用户可在 UI 中覆盖/删改：
+- Claude Code（参考：`claude`, `claude --continue/-c`, `claude --resume`；文档：https://docs.claude.com/en/docs/claude-code/cli-reference）
+- OpenAI Codex（偏交互：`codex`；部分模式/审批可作为自定义动作；文档：https://help.openai.com/en/articles/11096431-openai-codex-cli-getting-started）
+- Gemini CLI（交互：`gemini`；headless：`gemini -p "<PROMPT>"` 建议作为自定义动作；文档：https://google-gemini.github.io/gemini-cli/）
+- Aider（`aider`；恢复历史：`aider --restore-chat-history` 可作为 Continue/Resume；文档：https://aider.chat/docs/config/options.html）
+- OpenCode（`opencode`；继续：`opencode --continue/-c`；文档：https://opencode.ai/docs/cli/reference）
+- OpenClaw（按其 CLI 文档；可作为自定义动作；文档：https://docs.openclaw.ai/cli/）
+- GitHub Copilot CLI（`gh copilot suggest/explain` 需参数，默认不放在“松开 ⌘ 立即粘贴执行链路”；文档：https://docs.github.com/en/copilot/using-github-copilot/using-github-copilot-in-the-command-line）
 
-### Run - Terminal
-
-* AC6：Terminal 前台时，点击 Run 命令在当前 tab 执行
-* AC7：不识别终端时 Run 不可用，但 Copy 正常
-
-### 变量
-
-* AC8：带 `{PORT}` 的片段在输入 3000 后生成正确命令
-* AC9：变量为空时提示或使用默认值
-
----
-
-## 13. 指标与埋点（本地即可，不上报也可）
-
-* 使用频次：每天 Copy 次数、Run 次数
-* 搜索使用率：是否更偏向搜索还是分类点击
-* 失败率：Run 失败原因（无权限/无窗口/脚本错误）
-
-> 若不做埋点，可仅本地日志文件，供用户自查。
-
----
-
-## 14. 风险与对策
-
-* R1：AppleScript 转义复杂导致 Run 不稳定
-
-  * 对策：MVP 允许“复杂命令用 Copy”；Run 先支持常规命令；逐步完善转义
-* R2：自动化权限影响体验
-
-  * 对策：Run 默认关闭；提供“连接测试”引导一次授权
-* R3：不同 iTerm2 版本脚本接口差异
-
-  * 对策：锁定当前稳定 API（write text），回退 Copy
+> 原则：默认值尽量来自官方/主流用法；但最终以“用户可配置”兜底，避免 CLI 版本演进导致 TermKit 不可用。
 
 ---
 
-## 15. 附录：内置片段库
+## 10. 权限与系统要求（macOS）
+为实现“全局检测 ⌘ 长按 + 模拟 ⌘V”，通常需要：
+- Input Monitoring（输入监控）
+- Accessibility（辅助功能）
 
-### 15.1 分类架构
-
-**一级分类（按 CLI 工具）：**
-
-| 工具 | 说明 |
-|------|------|
-| Claude Code | Anthropic 官方 AI 编程 CLI |
-| Codex CLI | OpenAI 官方终端编程工具 |
-| Gemini CLI | Google Gemini 终端版 |
-| Aider | 开源 AI 结对编程 CLI，支持 100+ 模型 |
-| OpenClaw | 257K Star 开源编程代理 |
-| OpenCode | 95K Star 开源编程代理，75+ 模型供应商 |
-| GitHub Copilot CLI | GitHub/Microsoft 的 CLI AI 工具 |
-| 通用 | 不绑定特定 CLI 工具的通用命令（Git / Docker / Debug 等） |
-
-**二级分类（按功能）：**
-- 常用命令：日常高频操作
-- 配置：安装、初始化、环境设置
-- 调试：排查问题、日志查看
-- 项目管理：文件操作、Git 工作流
-- 插件&扩展：MCP、skill、自定义工具
-
-### 15.2 各工具内置片段（待研究补充）
-
-> 下一步开发时，需研究每个 CLI 工具的常用命令，为每个工具预置 5-10 条高频片段。
-
-#### 通用（保留原有）
-
-* 查看端口占用：`lsof -i :{PORT}`
-* 杀掉端口进程：`kill -9 $(lsof -t -i :{PORT})`
-* tail 日志：`tail -f {FILE}`
-* 全文搜索：`rg "{KEY}" -n`
-* 查找文件：`find . -name "{NAME}"`
-* Git 状态：`git status -sb`
-* Git 清理远端已删分支：`git fetch -p`
-* Git 重置（谨慎）：`git reset --hard HEAD~1`（danger）
-* Docker 容器列表：`docker ps -a`
-* Docker 清理（谨慎）：`docker system prune`（caution）
-
-#### Claude Code（示例）
-
-* 启动对话：`claude`
-* 带提示启动：`claude "帮我review这段代码"`
-* 恢复上次对话：`claude --continue`
-* 非交互模式：`claude -p "解释这个函数"`
-* 查看配置：`claude config list`
-
-#### Codex CLI（示例）
-
-* 启动：`codex`
-* 安静模式：`codex --quiet`
-* 全自主模式：`codex --full-auto`
-
-#### Gemini CLI（示例）
-
-* 启动：`gemini`
-* 查看模型：`gemini models`
-
-#### Aider（示例）
-
-* 启动：`aider`
-* 指定模型：`aider --model claude-3.5-sonnet`
-* 添加文件：`aider --file src/main.py`
-
-#### OpenClaw（示例）
-
-* 启动：`openclaw`
-
-#### OpenCode（示例）
-
-* 启动：`opencode`
-
-#### GitHub Copilot CLI（示例）
-
-* 解释命令：`gh copilot explain "{CMD}"`
-* 建议命令：`gh copilot suggest "{DESC}"`
+要求：
+- 无权限时要给出明确提示，并提供一键跳转到系统设置的路径。
+- 无权限时不应产生半截粘贴或异常状态。
 
 ---
 
-## 16. 开始制作的最小切入点（给开发者）
+## 11. 验收标准（Acceptance Criteria）
+- AC1：长按 ⌘（单独按住）稳定唤出菜单；松开 ⌘ 确认；`Esc` 取消。
+- AC2：鼠标/方向键/数字键/`~`/`` ` `` 导航符合预期。
+- AC3：确认后能粘贴到终端当前光标处；不自动回车。
+- AC4：粘贴后剪贴板恢复（至少字符串/图片不丢；尽量完整恢复所有 type）。
+- AC5：可在 UI 添加文件夹路径，保存后“打开文件夹”可选并生成 `cd` 命令。
+- AC6：可在 UI 添加 CLI、添加/编辑动作命令模板；菜单立即生效；空模板动作隐藏。
+- AC7：剪贴板有图片时，“粘贴图片”能落盘并粘贴路径；无图片时有提示。
+- AC8：用户正常使用系统 `⌘` 快捷键不误触发菜单。
 
-1. 先做 SwiftUI 面板 + 列表展示
-2. 实现 Copy（剪贴板）
-3. 加入 iTerm2 Run（AppleScript write text）
-4. 再补 Terminal Run
-5. 最后加变量替换与设置项
+---
 
-```
-
-如果你下一步希望“让 CLI 里的 AI 看了就能开工”，我还可以再补一份更偏工程的 **Technical Spec**（模块划分、类/文件结构、关键函数签名、转义策略、AppleScript 模板），同样用 md 给你。
-```
+## 12. 后续迭代（Roadmap）
+- R1：为需要参数的命令提供轻量输入（例如 `gh copilot suggest` 的描述输入框、`gemini -p` 的 prompt 输入框）。
+- R2：高级菜单编辑器（任意层级新增子菜单/动态列表节点）。
+- R3：从 Finder/终端快速“加入文件夹列表”（右键服务/拖拽）。

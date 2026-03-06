@@ -20,7 +20,5 @@
     <string>13.0</string>
     <key>LSUIElement</key>
     <true/>
-    <key>NSAppleEventsUsageDescription</key>
-    <string>TermKit 需要发送 AppleScript 命令到终端应用以执行命令片段。</string>
 </dict>
 </plist>

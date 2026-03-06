@@ -50,7 +50,7 @@ struct TermKitConfig: Codable, Equatable {
         var enableCmdHoldMenu: Bool
         var triggerKey: TriggerModifierKey
 
-        // 向后兼容：旧 config.json 没有 triggerKey 字段时默认 .command
+        // 向后兼容：旧 config.json 没有 triggerKey 字段时使用默认值
         init(enableCmdHoldMenu: Bool, triggerKey: TriggerModifierKey = .command) {
             self.enableCmdHoldMenu = enableCmdHoldMenu
             self.triggerKey = triggerKey
@@ -88,6 +88,9 @@ struct CLIEntry: Codable, Equatable, Identifiable {
     var continueCommand: String?
     var resumeCommand: String?
     var customActions: [CLIAction]
+    var startLabel: String?
+    var continueLabel: String?
+    var resumeLabel: String?
 
     init(
         id: UUID = UUID(),
@@ -95,7 +98,10 @@ struct CLIEntry: Codable, Equatable, Identifiable {
         startCommand: String? = nil,
         continueCommand: String? = nil,
         resumeCommand: String? = nil,
-        customActions: [CLIAction] = []
+        customActions: [CLIAction] = [],
+        startLabel: String? = nil,
+        continueLabel: String? = nil,
+        resumeLabel: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -103,6 +109,9 @@ struct CLIEntry: Codable, Equatable, Identifiable {
         self.continueCommand = continueCommand
         self.resumeCommand = resumeCommand
         self.customActions = customActions
+        self.startLabel = startLabel
+        self.continueLabel = continueLabel
+        self.resumeLabel = resumeLabel
     }
 
     static let defaultCLIs: [CLIEntry] = [
@@ -111,7 +120,10 @@ struct CLIEntry: Codable, Equatable, Identifiable {
             startCommand: "claude",
             continueCommand: "claude --continue",
             resumeCommand: "claude --resume",
-            customActions: []
+            customActions: [],
+            startLabel: "新建对话",
+            continueLabel: "继续上次对话",
+            resumeLabel: "恢复历史对话"
         ),
         CLIEntry(
             name: "OpenAI Codex",
@@ -122,28 +134,34 @@ struct CLIEntry: Codable, Equatable, Identifiable {
                 CLIAction(title: "Suggest", command: "codex --suggest"),
                 CLIAction(title: "Auto Edit", command: "codex --auto-edit"),
                 CLIAction(title: "Full Auto", command: "codex --full-auto")
-            ]
+            ],
+            startLabel: "启动"
         ),
         CLIEntry(
             name: "Gemini CLI",
             startCommand: "gemini",
             continueCommand: nil,
             resumeCommand: nil,
-            customActions: []
+            customActions: [],
+            startLabel: "启动"
         ),
         CLIEntry(
             name: "Aider",
             startCommand: "aider",
             continueCommand: "aider --restore-chat-history",
             resumeCommand: nil,
-            customActions: []
+            customActions: [],
+            startLabel: "启动",
+            continueLabel: "恢复聊天记录"
         ),
         CLIEntry(
             name: "OpenCode",
             startCommand: "opencode",
             continueCommand: "opencode --continue",
             resumeCommand: nil,
-            customActions: []
+            customActions: [],
+            startLabel: "启动",
+            continueLabel: "继续上次"
         ),
         CLIEntry(
             name: "OpenClaw",

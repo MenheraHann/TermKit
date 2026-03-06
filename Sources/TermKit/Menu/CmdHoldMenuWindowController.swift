@@ -6,11 +6,6 @@ final class CmdHoldMenuWindowController {
     private var panel: NSPanel?
     private var hostingView: NSHostingView<CmdHoldMenuView>?
 
-    private var localMonitor: Any?
-
-    var onRequestConfirm: (() -> Void)?
-    var onRequestCancel: (() -> Void)?
-    var onRequestNavigate: ((CmdHoldMenuNavigation) -> Void)?
     var onRequestSelectIndex: ((Int) -> Void)?
     var onRequestCommitSelection: (() -> Void)?
 
@@ -27,7 +22,8 @@ final class CmdHoldMenuWindowController {
         let origin = panel.frame.origin
         // 保持左上角不动（macOS 坐标系 y 从底部起）
         let newOrigin = NSPoint(x: origin.x, y: origin.y + panel.frame.height - newSize.height)
-        panel.setFrame(NSRect(origin: newOrigin, size: newSize), display: true, animate: false)
+        let clamped = clampToScreen(origin: newOrigin, size: newSize)
+        panel.setFrame(NSRect(origin: clamped, size: newSize), display: true, animate: false)
     }
 
     func show(at mouseLocation: NSPoint, state: CmdHoldMenuState) {
@@ -42,31 +38,28 @@ final class CmdHoldMenuWindowController {
         let panelSize = NSSize(width: max(fittingSize.width, 240), height: fittingSize.height)
         // 面板出现在光标右下方（类似右键菜单的位置）
         let origin = NSPoint(x: mouseLocation.x, y: mouseLocation.y - panelSize.height)
-        panel.setFrame(NSRect(origin: origin, size: panelSize), display: true)
+        let clamped = clampToScreen(origin: origin, size: panelSize)
+        panel.setFrame(NSRect(origin: clamped, size: panelSize), display: true)
 
         // 不抢焦点
         panel.orderFrontRegardless()
-        startKeyMonitor()
     }
 
     func hide() {
-        stopKeyMonitor()
         panel?.orderOut(nil)
     }
 
     func presentAddFolder(onSave: @escaping (String) -> Void) {
-        let alert = NSAlert()
-        alert.messageText = "添加文件夹"
-        alert.informativeText = "输入文件夹路径（支持 ~）"
-        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 360, height: 24))
-        alert.accessoryView = field
-        alert.addButton(withTitle: "保存")
-        alert.addButton(withTitle: "取消")
-        let response = alert.runModal()
-        guard response == .alertFirstButtonReturn else { return }
-        let text = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
-        onSave(text)
+        let panel = NSOpenPanel()
+        panel.title = "选择文件夹"
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = true
+
+        NSApp.activate(ignoringOtherApps: true)
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        onSave(url.path)
     }
 
     func presentAddCLI(onSave: @escaping (CLIEntry) -> Void) {
@@ -160,6 +153,36 @@ final class CmdHoldMenuWindowController {
 
     // MARK: - Private
 
+    /// 将面板 origin 钳制到光标所在屏幕的可见区域内
+    private func clampToScreen(origin: NSPoint, size: NSSize) -> NSPoint {
+        let mouseLocation = NSEvent.mouseLocation
+        let screen = NSScreen.screens.first { $0.frame.contains(mouseLocation) }
+            ?? NSScreen.main
+        guard let visibleFrame = screen?.visibleFrame else { return origin }
+
+        var x = origin.x
+        var y = origin.y
+
+        // 右侧溢出 → 左移
+        if x + size.width > visibleFrame.maxX {
+            x = visibleFrame.maxX - size.width
+        }
+        // 左侧溢出 → 右移
+        if x < visibleFrame.minX {
+            x = visibleFrame.minX
+        }
+        // 底部溢出 → 上移
+        if y < visibleFrame.minY {
+            y = visibleFrame.minY
+        }
+        // 顶部溢出 → 下移
+        if y + size.height > visibleFrame.maxY {
+            y = visibleFrame.maxY - size.height
+        }
+
+        return NSPoint(x: x, y: y)
+    }
+
     private func createPanel() {
         let panel = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: 240, height: 100),
@@ -172,7 +195,7 @@ final class CmdHoldMenuWindowController {
         panel.isReleasedWhenClosed = false
         panel.isOpaque = false
         panel.backgroundColor = .clear
-        panel.hasShadow = false  // SwiftUI 视图自带阴影
+        panel.hasShadow = true
         panel.hidesOnDeactivate = false
 
         let placeholder = CmdHoldMenuView(
@@ -189,63 +212,6 @@ final class CmdHoldMenuWindowController {
         self.hostingView = hosting
     }
 
-    private func startKeyMonitor() {
-        guard localMonitor == nil else { return }
-        localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard let self else { return event }
-            if handleKeyDown(event) {
-                return nil
-            }
-            return event
-        }
-    }
-
-    private func stopKeyMonitor() {
-        if let localMonitor {
-            NSEvent.removeMonitor(localMonitor)
-            self.localMonitor = nil
-        }
-    }
-
-    private func handleKeyDown(_ event: NSEvent) -> Bool {
-        switch event.keyCode {
-        case 126: // up
-            onRequestNavigate?(.up); return true
-        case 125: // down
-            onRequestNavigate?(.down); return true
-        case 123: // left
-            onRequestNavigate?(.back); return true
-        case 124: // right
-            onRequestNavigate?(.forward); return true
-        case 36: // return
-            onRequestConfirm?(); return true
-        case 53: // esc
-            onRequestCancel?(); return true
-        default:
-            break
-        }
-
-        if let chars = event.charactersIgnoringModifiers, let first = chars.first {
-            switch first {
-            case "1"..."9":
-                let n = Int(String(first)) ?? 0
-                onRequestSelectIndex?(n - 1)
-                onRequestCommitSelection?()
-                return true
-            case "0":
-                onRequestSelectIndex?(9)
-                onRequestCommitSelection?()
-                return true
-            case "~", "`":
-                onRequestNavigate?(.back)
-                return true
-            default:
-                break
-            }
-        }
-
-        return false
-    }
 }
 
 private extension String {
