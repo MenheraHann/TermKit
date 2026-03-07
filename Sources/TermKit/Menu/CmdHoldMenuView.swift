@@ -108,9 +108,18 @@ struct CmdHoldMenuView: View {
                     .frame(width: 14, alignment: .center)
             }
 
-            Text(item.title)
-                .font(.system(size: 13))
-                .lineLimit(1)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(item.title)
+                    .font(.system(size: 13))
+                    .lineLimit(1)
+                if let subtitle = item.subtitle {
+                    Text(subtitle)
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(isSelected ? .white.opacity(0.7) : .secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+            }
 
             Spacer()
 

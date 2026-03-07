@@ -36,8 +36,8 @@ final class CmdHoldMenuState: ObservableObject {
             items.append(contentsOf: [
                 CmdHoldMenuItem(title: L10n.Menu.paste, icon: "doc.on.clipboard", kind: .pasteImage),
                 CmdHoldMenuItem(title: L10n.Menu.clearInput, icon: "delete.left", kind: .deleteInput),
-                CmdHoldMenuItem(title: L10n.Menu.disableTemporary, icon: "moon", kind: .disableTemporary),
-                CmdHoldMenuItem(title: L10n.Menu.disablePermanent, icon: "moon.fill", kind: .disablePermanent),
+                CmdHoldMenuItem(title: L10n.Menu.disableTemporary, icon: "zzz", kind: .disableTemporary),
+                CmdHoldMenuItem(title: L10n.Menu.disablePermanent, icon: "togglepower", kind: .disablePermanent),
             ])
             return items
         case .folders:
@@ -55,7 +55,7 @@ final class CmdHoldMenuState: ObservableObject {
         case .actions:
             guard let cli = selectedCLI else { return [] }
             var items = cli.actions.map { action in
-                CmdHoldMenuItem(title: action.title, subtitle: action.command, icon: "command", kind: .actionCommand(action.command))
+                CmdHoldMenuItem(title: action.title, subtitle: action.command, icon: nil, kind: .actionCommand(action.command))
             }
             items.append(CmdHoldMenuItem(title: L10n.Menu.addActionEllipsis, icon: "plus.circle", kind: .addAction(cli.id)))
             return items

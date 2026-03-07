@@ -15,26 +15,24 @@ app: build
 	@chmod 755 $(APP_NAME)/Contents/MacOS/TermKit
 	@cp Resources/Info.plist $(APP_NAME)/Contents/Info.plist
 	@# Ad-hoc sign so macOS doesn't block it
-	@codesign --force --sign - $(APP_NAME)
+	@codesign --force --sign "Apple Development: 8618301155385 (FT6LVTC94L)" $(APP_NAME)
 	@echo "✅ $(APP_NAME) created."
 
 install: app
+	@# 杀掉正在运行的旧进程
+	@-pkill -x TermKit 2>/dev/null; sleep 0.3
 	@echo "Installing..."
-	@# Install .app
 	@rm -rf $(APP_DIR)
 	@cp -R $(APP_NAME) $(APP_DIR)
 	@chmod -R 755 $(APP_DIR)
 	@xattr -cr $(APP_DIR)
+	@# 自动启动新版本
+	@open $(APP_DIR)
 	@echo ""
-	@echo "✅ Done!"
-	@echo "  • TermKit.app → $(APP_DIR)"
-	@echo ""
-	@echo "Usage:"
-	@echo "  Hold ⌘          — 唤出分层菜单，松开粘贴"
-	@echo ""
-	@echo "💡 打开 TermKit 设置，开启「开机自动启动」即可后台常驻。"
+	@echo "✅ Done! TermKit 已自动重启。"
 
 uninstall:
+	@-pkill -x TermKit 2>/dev/null; sleep 0.3
 	@rm -rf $(APP_DIR)
 	@echo "✅ Uninstalled."
 
