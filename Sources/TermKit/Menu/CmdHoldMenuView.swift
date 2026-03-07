@@ -26,49 +26,54 @@ struct CmdHoldMenuView: View {
                     .padding(.horizontal, 6)
             }
 
-            // 菜单项列表（编号段 + 工具段）
-            let numbered = Array(state.currentItems.prefix(state.numberedItemCount).enumerated())
-            let utility = Array(state.currentItems.dropFirst(state.numberedItemCount).enumerated())
+            // 可滚动的菜单项列表（最大高度 500pt，超出滚动）
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    // 菜单项列表（编号段 + 工具段）
+                    let numbered = Array(state.currentItems.prefix(state.numberedItemCount).enumerated())
+                    let utility = Array(state.currentItems.dropFirst(state.numberedItemCount).enumerated())
 
-            ForEach(numbered, id: \.element.id) { idx, item in
-                menuRow(item: item, index: idx, isSelected: idx == state.selectedIndex)
-                    .onHover { hovering in if hovering { onSelectIndex(idx) } }
-                    .onTapGesture {
-                        onSelectIndex(idx)
-                        onCommitSelection()
+                    ForEach(numbered, id: \.element.id) { idx, item in
+                        menuRow(item: item, index: idx, isSelected: idx == state.selectedIndex)
+                            .onHover { hovering in if hovering { onSelectIndex(idx) } }
+                            .onTapGesture {
+                                onSelectIndex(idx)
+                                onCommitSelection()
+                            }
                     }
-            }
 
-            if !numbered.isEmpty && !utility.isEmpty {
-                Divider().padding(.horizontal, 6)
-            }
+                    if !numbered.isEmpty && !utility.isEmpty {
+                        Divider().padding(.horizontal, 6)
+                    }
 
-            ForEach(utility, id: \.element.id) { offset, item in
-                if item.kind == .disableTemporary {
-                    Divider().padding(.horizontal, 6)
+                    ForEach(utility, id: \.element.id) { offset, item in
+                        if item.kind == .disableTemporary {
+                            Divider().padding(.horizontal, 6)
+                        }
+                        let idx = state.numberedItemCount + offset
+                        menuRow(item: item, index: idx, isSelected: idx == state.selectedIndex)
+                            .onHover { hovering in if hovering { onSelectIndex(idx) } }
+                            .onTapGesture {
+                                onSelectIndex(idx)
+                                onCommitSelection()
+                            }
+                    }
                 }
-                let idx = state.numberedItemCount + offset
-                menuRow(item: item, index: idx, isSelected: idx == state.selectedIndex)
-                    .onHover { hovering in if hovering { onSelectIndex(idx) } }
-                    .onTapGesture {
-                        onSelectIndex(idx)
-                        onCommitSelection()
-                    }
             }
+            .frame(maxHeight: 500)
 
-            // 松开执行预览
-            if let hint = state.releaseHint {
-                Divider()
-                    .padding(.horizontal, 6)
-                Text(hint)
-                    .font(.system(size: 10, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 10)
-                    .padding(.top, 4)
-            }
+            // 松开执行预览（始终保留空间，避免界面跳动）
+            Divider()
+                .padding(.horizontal, 6)
+            Text(state.releaseHint ?? " ")
+                .font(.system(size: 10, design: .monospaced))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 10)
+                .padding(.top, 4)
+                .opacity(state.releaseHint != nil ? 1 : 0)
 
             Text(L10n.Menu.navigationHint)
                 .font(.system(size: 10))
@@ -77,7 +82,7 @@ struct CmdHoldMenuView: View {
                 .padding(.vertical, 4)
         }
         .padding(.vertical, 4)
-        .frame(minWidth: 240, maxWidth: 360)
+        .frame(minWidth: 240, maxWidth: 300)
         .background(
             RoundedRectangle(cornerRadius: 6)
                 .fill(.ultraThinMaterial)
@@ -101,10 +106,9 @@ struct CmdHoldMenuView: View {
                 Spacer().frame(width: 14)
             }
 
-            // SF Symbol 图标
+            // 图标（SF Symbol 或品牌 PNG）
             if let icon = item.icon {
-                Image(systemName: icon)
-                    .font(.system(size: 11))
+                IconView(icon: icon, defaultIcon: "terminal", size: 14)
                     .foregroundColor(isSelected ? .white : .secondary)
                     .frame(width: 14, alignment: .center)
             }

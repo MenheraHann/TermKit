@@ -7,6 +7,15 @@ final class CmdHoldMenuWindowController {
     private var hostingView: NSHostingView<CmdHoldMenuView>?
     private var lastMouseLocation: NSPoint = .zero
 
+    /// 首次弹出时记住的方向（true = 向上弹，false = 向下弹）
+    /// 子菜单优先沿用首次方向，除非放不下才翻转
+    private var initialPopUpward: Bool?
+    private var initialPopLeft: Bool?
+
+    /// 菜单面板宽度限制
+    private let minMenuWidth: CGFloat = 240
+    private let maxMenuWidth: CGFloat = 300
+
     var onRequestSelectIndex: ((Int) -> Void)?
     var onRequestCommitSelection: (() -> Void)?
 
@@ -17,9 +26,13 @@ final class CmdHoldMenuWindowController {
             onSelectIndex: { [weak self] index in self?.onRequestSelectIndex?(index) },
             onCommitSelection: { [weak self] in self?.onRequestCommitSelection?() }
         )
-        // 切换层级时重新调整面板大小
+        // 强制刷新布局，确保 fittingSize 反映新内容
+        hostingView.layoutSubtreeIfNeeded()
         let fittingSize = hostingView.fittingSize
-        let newSize = NSSize(width: max(fittingSize.width, 240), height: fittingSize.height)
+        let newSize = NSSize(
+            width: min(max(fittingSize.width, minMenuWidth), maxMenuWidth),
+            height: fittingSize.height
+        )
         // 层级切换时也用智能定位，根据鼠标位置重新翻转
         if lastMouseLocation != .zero {
             let newOrigin = smartPosition(mouse: lastMouseLocation, size: newSize)
@@ -40,8 +53,13 @@ final class CmdHoldMenuWindowController {
 
         // 让面板大小跟随 SwiftUI 内容
         let fittingSize = hostingView.fittingSize
-        let panelSize = NSSize(width: max(fittingSize.width, 240), height: fittingSize.height)
-        // 智能定位：根据鼠标位置自动翻转菜单方向
+        let panelSize = NSSize(
+            width: min(max(fittingSize.width, minMenuWidth), maxMenuWidth),
+            height: fittingSize.height
+        )
+        // 首次打开：重置方向记忆，由 smartPosition 决定并记录
+        initialPopUpward = nil
+        initialPopLeft = nil
         lastMouseLocation = mouseLocation
         let origin = smartPosition(mouse: mouseLocation, size: panelSize)
         panel.setFrame(NSRect(origin: origin, size: panelSize), display: true)
@@ -128,10 +146,8 @@ final class CmdHoldMenuWindowController {
     // MARK: - Private
 
     /// 智能定位：根据鼠标位置决定菜单弹出方向
-    /// - 默认：鼠标右下方
-    /// - 右侧溢出：翻到鼠标左侧
-    /// - 底部溢出：翻到鼠标上方
-    /// - 极端情况仍做边界兜底 clamp
+    /// - 首次打开：自动判断方向（上/下、左/右）并锁定
+    /// - 子菜单：方向永远不变，放不下时只做平移（clamp 到屏幕可见区域），不翻转
     private func smartPosition(mouse: NSPoint, size: NSSize) -> NSPoint {
         let screen = NSScreen.screens.first { $0.frame.contains(mouse) }
             ?? NSScreen.main
@@ -139,23 +155,23 @@ final class CmdHoldMenuWindowController {
             return NSPoint(x: mouse.x, y: mouse.y - size.height)
         }
 
-        // X 轴：右侧放不下就翻到左侧
-        var x: CGFloat
-        if mouse.x + size.width > visibleFrame.maxX {
-            x = mouse.x - size.width
-        } else {
-            x = mouse.x
+        // 首次打开：判断方向并锁定
+        if initialPopLeft == nil {
+            initialPopLeft = mouse.x + size.width > visibleFrame.maxX
+        }
+        if initialPopUpward == nil {
+            initialPopUpward = mouse.y - size.height < visibleFrame.minY
         }
 
-        // Y 轴：下方放不下就翻到上方（macOS 坐标系 y 从底部起）
-        var y: CGFloat
-        if mouse.y - size.height < visibleFrame.minY {
-            y = mouse.y
-        } else {
-            y = mouse.y - size.height
-        }
+        // X 轴：按锁定方向计算，不翻转
+        let goLeft = initialPopLeft ?? false
+        var x = goLeft ? mouse.x - size.width : mouse.x
 
-        // 边界兜底：防止极端情况（屏幕比菜单还小）
+        // Y 轴：按锁定方向计算，不翻转
+        let goUp = initialPopUpward ?? false
+        var y = goUp ? mouse.y : mouse.y - size.height
+
+        // 平移兜底：确保完整显示在屏幕内
         x = max(visibleFrame.minX, min(x, visibleFrame.maxX - size.width))
         y = max(visibleFrame.minY, min(y, visibleFrame.maxY - size.height))
 
@@ -183,8 +199,6 @@ final class CmdHoldMenuWindowController {
             onCommitSelection: { [weak self] in self?.onRequestCommitSelection?() }
         )
         let hosting = NSHostingView(rootView: placeholder)
-        // 让 hosting view 根据 SwiftUI 内容自适应大小
-        hosting.translatesAutoresizingMaskIntoConstraints = false
         panel.contentView = hosting
 
         self.panel = panel

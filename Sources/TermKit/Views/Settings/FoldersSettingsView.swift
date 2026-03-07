@@ -17,7 +17,7 @@ struct FoldersSettingsView: View {
                 List(selection: $selectedID) {
                     ForEach(folders) { folder in
                         HStack {
-                            Image(systemName: folder.icon ?? "folder.fill")
+                            IconView(icon: folder.icon, defaultIcon: "folder.fill", size: 16)
                                 .foregroundStyle(.blue)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(folder.title)

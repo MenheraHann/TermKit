@@ -212,16 +212,16 @@ struct CLIEntry: Codable, Equatable, Identifiable {
                 CLIAction(title: L10n.DefaultCLI.checkHealth, command: "claude doctor"),
                 CLIAction(title: L10n.DefaultCLI.checkUpdate, command: "claude update"),
                 CLIAction(title: L10n.DefaultCLI.viewConfig, command: "claude config"),
-            ]),
+            ], icon: "custom:claude"),
             CLIEntry(name: "OpenAI Codex", actions: [
                 CLIAction(title: L10n.DefaultCLI.launch, command: "codex"),
                 CLIAction(title: "Suggest", command: "codex --suggest"),
                 CLIAction(title: "Auto Edit", command: "codex --auto-edit"),
                 CLIAction(title: "Full Auto", command: "codex --full-auto"),
-            ]),
+            ], icon: "custom:openai"),
             CLIEntry(name: "Gemini CLI", actions: [
                 CLIAction(title: L10n.DefaultCLI.launch, command: "gemini"),
-            ]),
+            ], icon: "custom:gemini"),
             CLIEntry(name: "Aider", actions: [
                 CLIAction(title: L10n.DefaultCLI.launch, command: "aider"),
                 CLIAction(title: L10n.DefaultCLI.restoreChatHistory, command: "aider --restore-chat-history"),
@@ -229,11 +229,11 @@ struct CLIEntry: Codable, Equatable, Identifiable {
             CLIEntry(name: "OpenCode", actions: [
                 CLIAction(title: L10n.DefaultCLI.launch, command: "opencode"),
                 CLIAction(title: L10n.DefaultCLI.continueLast, command: "opencode --continue"),
-            ]),
+            ], icon: "custom:opencode-logo-light"),
             CLIEntry(name: "OpenClaw", actions: [
                 CLIAction(title: "Open TUI", command: "openclaw tui"),
-            ]),
-            CLIEntry(name: "GitHub Copilot CLI", actions: []),
+            ], icon: "custom:openclaw"),
+            CLIEntry(name: "GitHub Copilot CLI", actions: [], icon: "custom:githubcopilot"),
         ]
     }
 }

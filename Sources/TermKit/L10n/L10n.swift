@@ -1217,6 +1217,34 @@ enum L10n {
             }
         }
 
+        static var sfSymbols: String {
+            switch L10n.current {
+            case .zhHans: return "SF 符号"
+            case .zhHant: return "SF 符號"
+            case .en:     return "SF Symbols"
+            case .ja:     return "SF シンボル"
+            case .ko:     return "SF 심볼"
+            case .es:     return "Símbolos SF"
+            case .fr:     return "Symboles SF"
+            case .de:     return "SF-Symbole"
+            case .pt:     return "Símbolos SF"
+            }
+        }
+
+        static var brandIcons: String {
+            switch L10n.current {
+            case .zhHans: return "品牌图标"
+            case .zhHant: return "品牌圖標"
+            case .en:     return "Brand Icons"
+            case .ja:     return "ブランドアイコン"
+            case .ko:     return "브랜드 아이콘"
+            case .es:     return "Iconos de marca"
+            case .fr:     return "Icônes de marque"
+            case .de:     return "Markensymbole"
+            case .pt:     return "Ícones de marca"
+            }
+        }
+
         static var restoreDefault: String {
             switch L10n.current {
             case .zhHans: return "恢复默认图标"

@@ -16,7 +16,7 @@ struct CLISettingsView: View {
                 List(selection: $selectedID) {
                     ForEach(clis) { cli in
                         HStack {
-                            Image(systemName: cli.icon ?? "terminal")
+                            IconView(icon: cli.icon, defaultIcon: "terminal", size: 16)
                                 .foregroundStyle(.secondary)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(cli.name)

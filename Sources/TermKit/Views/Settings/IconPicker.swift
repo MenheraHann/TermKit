@@ -1,13 +1,19 @@
 import SwiftUI
 
-/// 从预设 SF Symbol 集中选择图标
+/// 从预设 SF Symbol 集或品牌 PNG 图标中选择图标
 /// 点击当前图标弹出 Popover，显示图标网格供选择
 struct IconPicker: View {
     @Binding var icon: String?
     var defaultIcon: String
     @State private var showPopover = false
+    @State private var selectedTab: IconTab = .sfSymbols
 
-    /// 可选图标集
+    private enum IconTab: Int {
+        case sfSymbols
+        case brandIcons
+    }
+
+    /// 可选 SF Symbol 图标集
     private static let availableIcons: [String] = [
         // 终端 & 开发
         "terminal", "terminal.fill",
@@ -54,10 +60,16 @@ struct IconPicker: View {
 
     var body: some View {
         Button {
+            // 打开弹窗时，根据当前 icon 值自动选中对应的标签页
+            if let currentIcon = icon, currentIcon.hasPrefix("custom:") {
+                selectedTab = .brandIcons
+            } else {
+                selectedTab = .sfSymbols
+            }
             showPopover = true
         } label: {
-            Image(systemName: icon ?? defaultIcon)
-                .font(.title2)
+            // 按钮预览：根据当前 icon 值决定显示 SF Symbol 还是 PNG
+            IconView(icon: icon, defaultIcon: defaultIcon, size: 20)
                 .frame(width: 36, height: 36)
                 .background(Color(nsColor: .controlBackgroundColor))
                 .cornerRadius(6)
@@ -74,27 +86,21 @@ struct IconPicker: View {
                     .font(.headline)
                     .padding(.top, 8)
 
+                // 标签页切换
+                Picker("", selection: $selectedTab) {
+                    Text(L10n.IconPicker.sfSymbols).tag(IconTab.sfSymbols)
+                    Text(L10n.IconPicker.brandIcons).tag(IconTab.brandIcons)
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 12)
+
+                // 内容区域
                 ScrollView {
-                    LazyVGrid(columns: Array(repeating: GridItem(.fixed(36), spacing: 8), count: 8), spacing: 8) {
-                        ForEach(Self.availableIcons, id: \.self) { name in
-                            Button {
-                                icon = name
-                                showPopover = false
-                            } label: {
-                                Image(systemName: name)
-                                    .font(.system(size: 16))
-                                    .frame(width: 36, height: 36)
-                                    .background(
-                                        (icon ?? defaultIcon) == name
-                                            ? Color.accentColor.opacity(0.2)
-                                            : Color.clear
-                                    )
-                                    .cornerRadius(6)
-                            }
-                            .buttonStyle(.plain)
-                        }
+                    if selectedTab == .sfSymbols {
+                        sfSymbolsGrid
+                    } else {
+                        brandIconsGrid
                     }
-                    .padding(.horizontal, 12)
                 }
 
                 Divider()
@@ -106,7 +112,62 @@ struct IconPicker: View {
                 .controlSize(.small)
                 .padding(.bottom, 8)
             }
-            .frame(width: 340, height: 300)
+            .frame(width: 400, height: 360)
         }
+    }
+
+    // MARK: - SF Symbols 网格
+
+    private var sfSymbolsGrid: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.fixed(36), spacing: 8), count: 8), spacing: 8) {
+            ForEach(Self.availableIcons, id: \.self) { name in
+                Button {
+                    icon = name
+                    showPopover = false
+                } label: {
+                    Image(systemName: name)
+                        .font(.system(size: 16))
+                        .frame(width: 36, height: 36)
+                        .background(
+                            (icon ?? defaultIcon) == name
+                                ? Color.accentColor.opacity(0.2)
+                                : Color.clear
+                        )
+                        .cornerRadius(6)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 12)
+    }
+
+    // MARK: - 品牌图标网格
+
+    private var brandIconsGrid: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.fixed(36), spacing: 8), count: 8), spacing: 8) {
+            ForEach(CLIIconRegistry.allBrandIcons, id: \.self) { name in
+                Button {
+                    icon = "custom:\(name)"
+                    showPopover = false
+                } label: {
+                    brandIconCell(name: name)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 12)
+    }
+
+    /// 品牌图标单元格
+    private func brandIconCell(name: String) -> some View {
+        let isCurrentIcon = icon == "custom:\(name)"
+        return IconView(icon: "custom:\(name)", defaultIcon: defaultIcon, size: 24)
+            .frame(width: 36, height: 36)
+            .background(
+                isCurrentIcon
+                    ? Color.accentColor.opacity(0.2)
+                    : Color.clear
+            )
+            .cornerRadius(6)
     }
 }

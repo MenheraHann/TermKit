@@ -14,6 +14,8 @@ app: build
 	@cp .build/release/TermKit $(APP_NAME)/Contents/MacOS/TermKit
 	@chmod 755 $(APP_NAME)/Contents/MacOS/TermKit
 	@cp Resources/Info.plist $(APP_NAME)/Contents/Info.plist
+	@mkdir -p $(APP_NAME)/Contents/Resources
+	@cp -R Resources/CLIIcons $(APP_NAME)/Contents/Resources/CLIIcons
 	@# Ad-hoc sign so macOS doesn't block it
 	@codesign --force --sign "Apple Development: 8618301155385 (FT6LVTC94L)" $(APP_NAME)
 	@echo "✅ $(APP_NAME) created."
