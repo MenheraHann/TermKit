@@ -63,7 +63,7 @@ struct CLISettingsView: View {
                 .padding(.vertical, 4)
                 .background(.bar)
             }
-            .frame(maxWidth: .infinity)
+            .frame(width: 280)
 
             Divider()
 
@@ -82,7 +82,6 @@ struct CLISettingsView: View {
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color(nsColor: .controlBackgroundColor))
             }
         }
         .confirmationDialog(

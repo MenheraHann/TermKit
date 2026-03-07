@@ -19,12 +19,14 @@ final class SettingsWindowManager: NSObject, NSWindowDelegate {
         NSApp.setActivationPolicy(.regular)
 
         let w = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 800, height: 500),
+            contentRect: NSRect(x: 0, y: 0, width: 700, height: 500),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
         )
-        w.title = L10n.MenuBar.settingsWindowTitle
+        w.title = "TermKit"
+        w.titleVisibility = .visible
+        w.toolbarStyle = .expanded
         w.contentView = NSHostingView(
             rootView: SettingsView().environmentObject(model)
         )
