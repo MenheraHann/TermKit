@@ -51,6 +51,7 @@ struct TermKitConfig: Codable, Equatable {
     var imagePaste: ImagePasteConfig
     var commandTemplates: [CommandTemplate]
     var language: AppLanguage
+    var allowedApps: [AppEntry]
 
     static var defaultValue: TermKitConfig { TermKitConfig(
         version: 1,
@@ -60,7 +61,8 @@ struct TermKitConfig: Codable, Equatable {
         clis: CLIEntry.defaultCLIs,
         imagePaste: ImagePasteConfig(saveDirectory: "Library/Application Support/TermKit/Images"),
         commandTemplates: [],
-        language: .zhHans
+        language: .zhHans,
+        allowedApps: AppEntry.defaultApps
     ) }
 
     // 向后兼容：旧 config.json 没有 commandTemplates / language 字段时使用默认值
@@ -72,7 +74,8 @@ struct TermKitConfig: Codable, Equatable {
         clis: [CLIEntry],
         imagePaste: ImagePasteConfig,
         commandTemplates: [CommandTemplate] = [],
-        language: AppLanguage = .zhHans
+        language: AppLanguage = .zhHans,
+        allowedApps: [AppEntry] = AppEntry.defaultApps
     ) {
         self.version = version
         self.features = features
@@ -82,6 +85,7 @@ struct TermKitConfig: Codable, Equatable {
         self.imagePaste = imagePaste
         self.commandTemplates = commandTemplates
         self.language = language
+        self.allowedApps = allowedApps
     }
 
     init(from decoder: Decoder) throws {
@@ -94,6 +98,7 @@ struct TermKitConfig: Codable, Equatable {
         imagePaste = try container.decode(ImagePasteConfig.self, forKey: .imagePaste)
         commandTemplates = try container.decodeIfPresent([CommandTemplate].self, forKey: .commandTemplates) ?? []
         language = try container.decodeIfPresent(AppLanguage.self, forKey: .language) ?? .zhHans
+        allowedApps = try container.decodeIfPresent([AppEntry].self, forKey: .allowedApps) ?? AppEntry.defaultApps
     }
 
     struct Features: Codable, Equatable {
@@ -131,6 +136,35 @@ struct FolderEntry: Codable, Equatable, Identifiable {
         self.path = path
         self.icon = icon
     }
+}
+
+struct AppEntry: Codable, Equatable, Identifiable {
+    var id: UUID
+    var name: String       // app 显示名称
+    var bundleID: String   // bundle identifier
+
+    init(id: UUID = UUID(), name: String, bundleID: String) {
+        self.id = id
+        self.name = name
+        self.bundleID = bundleID
+    }
+
+    /// 内置默认白名单（终端 + 内置终端的编辑器）
+    static let defaultApps: [AppEntry] = [
+        AppEntry(name: "Terminal", bundleID: "com.apple.Terminal"),
+        AppEntry(name: "iTerm2", bundleID: "com.googlecode.iterm2"),
+        AppEntry(name: "Warp", bundleID: "dev.warp.Warp-Stable"),
+        AppEntry(name: "kitty", bundleID: "net.kovidgoyal.kitty"),
+        AppEntry(name: "Alacritty", bundleID: "org.alacritty"),
+        AppEntry(name: "Hyper", bundleID: "co.zeit.hyper"),
+        AppEntry(name: "WezTerm", bundleID: "com.github.wez.wezterm"),
+        AppEntry(name: "Rio", bundleID: "com.raphaelamorim.rio"),
+        AppEntry(name: "Ghostty", bundleID: "com.mitchellh.ghostty"),
+        AppEntry(name: "MacTerm", bundleID: "dev.kdrag0n.MacTerm"),
+        AppEntry(name: "JetBrains Fleet", bundleID: "com.jetbrains.fleet"),
+        AppEntry(name: "VS Code", bundleID: "com.microsoft.VSCode"),
+        AppEntry(name: "Cursor", bundleID: "com.todesktop.230313mzl4w4u92"),
+    ]
 }
 
 struct CLIEntry: Codable, Equatable, Identifiable {

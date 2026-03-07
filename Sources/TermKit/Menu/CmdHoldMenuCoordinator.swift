@@ -46,6 +46,7 @@ final class CmdHoldMenuCoordinator: ObservableObject {
         self.config = config
         detector.holdThresholdMs = config.timing.holdThresholdMs
         detector.triggerKey = config.features.triggerKey
+        ModifierHoldDetector.updateAllowedApps(config.allowedApps)
 
         // 用户在暂停期间手动打开开关 → 视为主动恢复，取消暂停
         if config.features.enableCmdHoldMenu && isTemporarilyDisabled {

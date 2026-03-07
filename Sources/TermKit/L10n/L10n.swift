@@ -124,6 +124,20 @@ enum L10n {
             case .pt:     return "Modelos"
             }
         }
+
+        static var apps: String {
+            switch L10n.current {
+            case .zhHans: return "应用"
+            case .zhHant: return "應用"
+            case .en:     return "Apps"
+            case .ja:     return "アプリ"
+            case .ko:     return "앱"
+            case .es:     return "Apps"
+            case .fr:     return "Apps"
+            case .de:     return "Apps"
+            case .pt:     return "Apps"
+            }
+        }
     }
 
     // MARK: - 通用设置
@@ -424,6 +438,122 @@ enum L10n {
             case .fr:     return "Modifier le chemin"
             case .de:     return "Pfad ändern"
             case .pt:     return "Alterar caminho"
+            }
+        }
+    }
+
+    // MARK: - 应用设置
+
+    enum Apps {
+        static var addApp: String {
+            switch L10n.current {
+            case .zhHans: return "添加应用"
+            case .zhHant: return "新增應用"
+            case .en:     return "Add App"
+            case .ja:     return "アプリを追加"
+            case .ko:     return "앱 추가"
+            case .es:     return "Agregar app"
+            case .fr:     return "Ajouter une app"
+            case .de:     return "App hinzufügen"
+            case .pt:     return "Adicionar app"
+            }
+        }
+
+        static var selectOrAddApp: String {
+            switch L10n.current {
+            case .zhHans: return "选择或添加一个应用"
+            case .zhHant: return "選擇或新增一個應用"
+            case .en:     return "Select or add an app"
+            case .ja:     return "アプリを選択または追加"
+            case .ko:     return "앱을 선택하거나 추가하세요"
+            case .es:     return "Selecciona o agrega una app"
+            case .fr:     return "Sélectionnez ou ajoutez une app"
+            case .de:     return "App auswählen oder hinzufügen"
+            case .pt:     return "Selecione ou adicione um app"
+            }
+        }
+
+        static var chooseApp: String {
+            switch L10n.current {
+            case .zhHans: return "选择应用"
+            case .zhHant: return "選擇應用"
+            case .en:     return "Choose App"
+            case .ja:     return "アプリを選択"
+            case .ko:     return "앱 선택"
+            case .es:     return "Elegir app"
+            case .fr:     return "Choisir une app"
+            case .de:     return "App auswählen"
+            case .pt:     return "Escolher app"
+            }
+        }
+
+        static var bundleID: String {
+            switch L10n.current {
+            case .zhHans: return "Bundle ID"
+            case .zhHant: return "Bundle ID"
+            case .en:     return "Bundle ID"
+            case .ja:     return "Bundle ID"
+            case .ko:     return "Bundle ID"
+            case .es:     return "Bundle ID"
+            case .fr:     return "Bundle ID"
+            case .de:     return "Bundle ID"
+            case .pt:     return "Bundle ID"
+            }
+        }
+
+        static var appInfo: String {
+            switch L10n.current {
+            case .zhHans: return "应用信息"
+            case .zhHant: return "應用資訊"
+            case .en:     return "App Info"
+            case .ja:     return "アプリ情報"
+            case .ko:     return "앱 정보"
+            case .es:     return "Información de la app"
+            case .fr:     return "Infos de l'app"
+            case .de:     return "App-Info"
+            case .pt:     return "Informações do app"
+            }
+        }
+
+        static var resetToDefaults: String {
+            switch L10n.current {
+            case .zhHans: return "重置为默认"
+            case .zhHant: return "重置為預設"
+            case .en:     return "Reset to Defaults"
+            case .ja:     return "デフォルトに戻す"
+            case .ko:     return "기본값으로 재설정"
+            case .es:     return "Restablecer"
+            case .fr:     return "Réinitialiser"
+            case .de:     return "Zurücksetzen"
+            case .pt:     return "Redefinir"
+            }
+        }
+
+        static var confirmReset: String {
+            switch L10n.current {
+            case .zhHans: return "确定要重置为默认应用列表吗？"
+            case .zhHant: return "確定要重置為預設應用列表嗎？"
+            case .en:     return "Reset to default app list?"
+            case .ja:     return "デフォルトのアプリリストに戻しますか？"
+            case .ko:     return "기본 앱 목록으로 재설정하시겠습니까?"
+            case .es:     return "¿Restablecer la lista de apps predeterminada?"
+            case .fr:     return "Réinitialiser la liste d'apps par défaut ?"
+            case .de:     return "Auf Standard-App-Liste zurücksetzen?"
+            case .pt:     return "Redefinir para a lista padrão de apps?"
+            }
+        }
+
+        static var appAlreadyExists: String {
+            switch L10n.current {
+            case .zhHans: return "该应用已在列表中"
+            case .zhHant: return "該應用已在列表中"
+            case .en:     return "This app is already in the list"
+            case .ja:     return "このアプリは既にリストにあります"
+            case .ko:     return "이 앱은 이미 목록에 있습니다"
+            case .es:     return "Esta app ya está en la lista"
+            case .fr:     return "Cette app est déjà dans la liste"
+            case .de:     return "Diese App ist bereits in der Liste"
+            case .pt:     return "Este app já está na lista"
             }
         }
     }

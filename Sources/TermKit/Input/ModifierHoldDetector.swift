@@ -323,6 +323,10 @@ final class ModifierHoldDetector {
             Task { @MainActor in
                 guard let self else { return }
                 guard self.targetDownAt != nil else { return }
+
+                // 仅在支持的 app（终端/编辑器）聚焦时触发
+                guard ModifierHoldDetector.isFrontmostAppSupported() else { return }
+
                 self.menuVisible = true
                 self._menuVisible = true
                 self.onShowMenu?()
@@ -330,6 +334,30 @@ final class ModifierHoldDetector {
         }
         scheduledShow = work
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(holdThresholdMs), execute: work)
+    }
+
+    // MARK: - 支持的 app 检测（仅在 MainActor 上访问，避免数据竞争）
+
+    /// 动态白名单，由 applyConfig 同步更新
+    private static var allowedBundleIDs: Set<String> = Set(AppEntry.defaultApps.map(\.bundleID))
+
+    /// 从 config 更新白名单（由 CmdHoldMenuCoordinator.applyConfig 在主线程调用）
+    static func updateAllowedApps(_ apps: [AppEntry]) {
+        allowedBundleIDs = Set(apps.map(\.bundleID))
+        NSLog("[TermKit] ModifierHoldDetector: 白名单已更新，共 %d 个 app", allowedBundleIDs.count)
+    }
+
+    /// 检查当前前台 app 是否在白名单中
+    private static func isFrontmostAppSupported() -> Bool {
+        guard let app = NSWorkspace.shared.frontmostApplication else {
+            NSLog("[TermKit] ModifierHoldDetector: frontmostApplication 为 nil，跳过菜单显示")
+            return false
+        }
+        guard let bundleID = app.bundleIdentifier else {
+            NSLog("[TermKit] ModifierHoldDetector: 前台 app '%@' 无 bundleIdentifier，跳过菜单显示", app.localizedName ?? "unknown")
+            return false
+        }
+        return allowedBundleIDs.contains(bundleID)
     }
 
     // MARK: - 权限轮询（用户授权后自动启动 tap）

@@ -11,7 +11,9 @@ struct SettingsView: View {
             case 0: GeneralSettingsView().environmentObject(model)
             case 1: FoldersSettingsView().environmentObject(model)
             case 2: CLISettingsView().environmentObject(model)
-            default: CommandTemplatesSettingsView().environmentObject(model)
+            case 3: CommandTemplatesSettingsView().environmentObject(model)
+            case 4: AppsSettingsView().environmentObject(model)
+            default: GeneralSettingsView().environmentObject(model)
             }
         }
         .frame(minWidth: 520, maxWidth: .infinity, minHeight: 360, maxHeight: .infinity)
@@ -22,6 +24,7 @@ struct SettingsView: View {
                     Label(L10n.Settings.folders, systemImage: "folder").tag(1)
                     Label(L10n.Settings.cliTools, systemImage: "terminal").tag(2)
                     Label(L10n.Settings.commandTemplates, systemImage: "doc.text").tag(3)
+                    Label(L10n.Settings.apps, systemImage: "app.badge.checkmark").tag(4)
                 }
                 .pickerStyle(.segmented)
             }
