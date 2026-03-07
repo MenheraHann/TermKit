@@ -11,6 +11,13 @@ final class CmdHoldMenuCoordinator: ObservableObject {
 
     private var config: TermKitConfig = .defaultValue
     private let state = CmdHoldMenuState()
+    private var reEnableTimer: DispatchSourceTimer?
+
+    /// 暂停 1 小时标志（UI 需读取来同步开关状态）
+    private(set) var isTemporarilyDisabled = false
+
+    /// 外部回调：当 coordinator 内部修改了 config（如永久关闭快捷键），通知 model 同步
+    var onConfigDidChange: ((TermKitConfig) -> Void)?
 
     init(configStore: ConfigStore) {
         self.configStore = configStore
@@ -23,6 +30,8 @@ final class CmdHoldMenuCoordinator: ObservableObject {
         detector.onNavigate = { [weak self] nav in self?.handle(nav) }
         detector.onDelete = { [weak self] in self?.handleDelete() }
         detector.onPaste = { [weak self] in self?.handleSmartPaste() }
+        detector.onDisableTemporary = { [weak self] in self?.disableForOneHour() }
+        detector.onDisablePermanent = { [weak self] in self?.disablePermanently() }
         detector.onNumberKeySelect = { [weak self] index in
             guard let self, index < self.state.numberedItemCount else { return }
             self.state.select(index: index)
@@ -37,7 +46,13 @@ final class CmdHoldMenuCoordinator: ObservableObject {
         self.config = config
         detector.holdThresholdMs = config.timing.holdThresholdMs
         detector.triggerKey = config.features.triggerKey
-        detector.isEnabled = config.features.enableCmdHoldMenu
+
+        // 用户在暂停期间手动打开开关 → 视为主动恢复，取消暂停
+        if config.features.enableCmdHoldMenu && isTemporarilyDisabled {
+            cancelTemporaryDisable()
+        }
+
+        detector.isEnabled = config.features.enableCmdHoldMenu && !isTemporarilyDisabled
         state.applyConfig(config)
         window.update(state: state)
     }
@@ -75,7 +90,8 @@ final class CmdHoldMenuCoordinator: ObservableObject {
     private func handleDelete() {
         if state.level == .root {
             paster.sendClearLine()
-            hide()
+            state.deselect()           // 取消选中，防止释放时重复执行
+            window.update(state: state)
         } else {
             state.reset()
             window.update(state: state)
@@ -159,8 +175,60 @@ final class CmdHoldMenuCoordinator: ObservableObject {
                 self.configStore.save(next)
                 self.applyConfig(next)
             }
+        case .disableTemporary:
+            disableForOneHour()
+        case .disablePermanent:
+            disablePermanently()
         case .none:
             hide()
         }
+    }
+
+    // MARK: - 关闭快捷键
+
+    /// 暂停快捷键 1 小时后自动恢复
+    private func disableForOneHour() {
+        hide()
+        isTemporarilyDisabled = true
+        detector.isEnabled = false
+        // 通知 model 刷新 UI（开关需显示 OFF）
+        onConfigDidChange?(config)
+        NSLog("[TermKit] 快捷键已暂停 1 小时")
+
+        reEnableTimer?.cancel()
+        let timer = DispatchSource.makeTimerSource(queue: .main)
+        timer.schedule(deadline: .now() + 3600)
+        timer.setEventHandler { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                self.reEnableTimer = nil
+                self.isTemporarilyDisabled = false
+                // 恢复时重新走 applyConfig 让 detector 状态与 config 一致
+                self.applyConfig(self.config)
+                self.onConfigDidChange?(self.config)
+                NSLog("[TermKit] 快捷键 1 小时暂停已到期，已自动恢复")
+            }
+        }
+        reEnableTimer = timer
+        timer.resume()
+    }
+
+    /// 取消暂停（用户手动恢复时调用）
+    private func cancelTemporaryDisable() {
+        isTemporarilyDisabled = false
+        reEnableTimer?.cancel()
+        reEnableTimer = nil
+        NSLog("[TermKit] 用户手动恢复，暂停已取消")
+    }
+
+    /// 永久关闭快捷键：修改配置并同步
+    private func disablePermanently() {
+        hide()
+        var next = config
+        next.features.enableCmdHoldMenu = false
+        configStore.save(next)
+        applyConfig(next)
+        onConfigDidChange?(next)
+        NSLog("[TermKit] 快捷键已永久关闭")
     }
 }

@@ -43,6 +43,9 @@ struct CmdHoldMenuView: View {
             }
 
             ForEach(utility, id: \.element.id) { offset, item in
+                if item.kind == .disableTemporary {
+                    Divider().padding(.horizontal, 6)
+                }
                 let idx = state.numberedItemCount + offset
                 menuRow(item: item, index: idx, isSelected: idx == state.selectedIndex)
                     .onTapGesture {
@@ -66,14 +69,14 @@ struct CmdHoldMenuView: View {
                     .padding(.top, 4)
             }
 
-            Text("← ` 回退　↑↓ 选择　→ 下一步")
+            Text(L10n.Menu.navigationHint)
                 .font(.system(size: 10))
                 .foregroundStyle(.tertiary)
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.vertical, 4)
         }
         .padding(.vertical, 4)
-        .frame(width: 220)
+        .frame(width: 240)
         .background(
             RoundedRectangle(cornerRadius: 6)
                 .fill(.ultraThinMaterial)
@@ -95,6 +98,14 @@ struct CmdHoldMenuView: View {
                     .frame(width: 14, alignment: .trailing)
             } else {
                 Spacer().frame(width: 14)
+            }
+
+            // SF Symbol 图标
+            if let icon = item.icon {
+                Image(systemName: icon)
+                    .font(.system(size: 11))
+                    .foregroundColor(isSelected ? .white : .secondary)
+                    .frame(width: 14, alignment: .center)
             }
 
             Text(item.title)
@@ -127,9 +138,11 @@ struct CmdHoldMenuView: View {
     /// 工具项的快捷键提示
     private func shortcutHint(for item: CmdHoldMenuItem) -> String? {
         switch item.kind {
-        case .pasteImage:  return "V"
-        case .deleteInput: return "⌫"
-        default:           return nil
+        case .pasteImage:         return "V"
+        case .deleteInput:        return "⌫"
+        case .disableTemporary:   return "-"
+        case .disablePermanent:   return "="
+        default:                  return nil
         }
     }
 

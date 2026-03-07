@@ -12,25 +12,25 @@ struct CommandTemplateDetailView: View {
 
     var body: some View {
         Form {
-            Section("配置") {
-                TextField("模板名称", text: templateBinding(\.name))
+            Section(L10n.Templates.configuration) {
+                TextField(L10n.Templates.templateName, text: templateBinding(\.name))
                     .textFieldStyle(.roundedBorder)
 
                 VStack(alignment: .leading) {
-                    Text("命令模式")
+                    Text(L10n.Templates.commandPattern)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    TextField("如 git checkout {branch}", text: commandBinding(), axis: .vertical)
+                    TextField(L10n.Templates.commandPlaceholder, text: commandBinding(), axis: .vertical)
                         .lineLimit(2...5)
                         .font(.system(.body, design: .monospaced))
                         .textFieldStyle(.roundedBorder)
                 }
             }
 
-            Section("预览") {
+            Section(L10n.Templates.preview) {
                 GroupBox {
                     HStack {
-                        Text(tmpl.resolvedCommand().isEmpty ? "(等待输入命令)" : tmpl.resolvedCommand())
+                        Text(tmpl.resolvedCommand().isEmpty ? L10n.Templates.awaitingInput : tmpl.resolvedCommand())
                             .font(.system(.caption, design: .monospaced))
                             .foregroundStyle(tmpl.resolvedCommand().isEmpty ? .tertiary : .primary)
                             .textSelection(.enabled)
@@ -40,18 +40,18 @@ struct CommandTemplateDetailView: View {
                 }
             }
 
-            Section("变量参数") {
+            Section(L10n.Templates.variableParameters) {
                 if tmpl.variables.isEmpty {
-                    Text("在命令中使用 {variable} 来创建动态参数")
+                    Text(L10n.Templates.variableHint)
                         .foregroundStyle(.secondary)
                         .font(.caption)
                         .padding(.vertical, 4)
                 } else {
                     Grid(alignment: .leading, verticalSpacing: 12) {
                         GridRow {
-                            Text("占位符").fontWeight(.medium)
-                            Text("显示名称").fontWeight(.medium)
-                            Text("默认值").fontWeight(.medium)
+                            Text(L10n.Templates.placeholder).fontWeight(.medium)
+                            Text(L10n.Folders.displayName).fontWeight(.medium)
+                            Text(L10n.Templates.defaultValue).fontWeight(.medium)
                         }
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -64,11 +64,11 @@ struct CommandTemplateDetailView: View {
                                     .font(.system(.body, design: .monospaced))
                                     .foregroundStyle(.blue)
 
-                                TextField("名称", text: variableBinding(varIdx, \.label))
+                                TextField(L10n.Templates.varNamePlaceholder, text: variableBinding(varIdx, \.label))
                                     .textFieldStyle(.roundedBorder)
                                     .controlSize(.small)
 
-                                TextField("可选", text: variableBinding(varIdx, \.defaultValue))
+                                TextField(L10n.Templates.optional, text: variableBinding(varIdx, \.defaultValue))
                                     .textFieldStyle(.roundedBorder)
                                     .controlSize(.small)
                             }

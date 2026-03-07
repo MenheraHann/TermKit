@@ -18,6 +18,16 @@ enum TriggerModifierKey: String, Codable, CaseIterable {
         }
     }
 
+    /// 对应的物理按键 keyCode（用于 CGEventSource.keyState 查询）
+    var cgKeyCode: CGKeyCode {
+        switch self {
+        case .command:  return 55   // 0x37 Left Command
+        case .option:   return 58   // 0x3A Left Option
+        case .control:  return 59   // 0x3B Left Control
+        case .fn:       return 63   // 0x3F fn/Globe
+        }
+    }
+
     /// 显示名称（用于设置界面）
     var displayName: String {
         switch self {
@@ -37,6 +47,7 @@ struct TermKitConfig: Codable, Equatable {
     var clis: [CLIEntry]
     var imagePaste: ImagePasteConfig
     var commandTemplates: [CommandTemplate]
+    var language: AppLanguage
 
     static let defaultValue = TermKitConfig(
         version: 1,
@@ -45,10 +56,11 @@ struct TermKitConfig: Codable, Equatable {
         folders: [],
         clis: CLIEntry.defaultCLIs,
         imagePaste: ImagePasteConfig(saveDirectory: "Library/Application Support/TermKit/Images"),
-        commandTemplates: []
+        commandTemplates: [],
+        language: .zhHans
     )
 
-    // 向后兼容：旧 config.json 没有 commandTemplates 字段时使用空数组
+    // 向后兼容：旧 config.json 没有 commandTemplates / language 字段时使用默认值
     init(
         version: Int,
         features: Features,
@@ -56,7 +68,8 @@ struct TermKitConfig: Codable, Equatable {
         folders: [FolderEntry],
         clis: [CLIEntry],
         imagePaste: ImagePasteConfig,
-        commandTemplates: [CommandTemplate] = []
+        commandTemplates: [CommandTemplate] = [],
+        language: AppLanguage = .zhHans
     ) {
         self.version = version
         self.features = features
@@ -65,6 +78,7 @@ struct TermKitConfig: Codable, Equatable {
         self.clis = clis
         self.imagePaste = imagePaste
         self.commandTemplates = commandTemplates
+        self.language = language
     }
 
     init(from decoder: Decoder) throws {
@@ -76,6 +90,7 @@ struct TermKitConfig: Codable, Equatable {
         clis = try container.decode([CLIEntry].self, forKey: .clis)
         imagePaste = try container.decode(ImagePasteConfig.self, forKey: .imagePaste)
         commandTemplates = try container.decodeIfPresent([CommandTemplate].self, forKey: .commandTemplates) ?? []
+        language = try container.decodeIfPresent(AppLanguage.self, forKey: .language) ?? .zhHans
     }
 
     struct Features: Codable, Equatable {
@@ -105,28 +120,34 @@ struct FolderEntry: Codable, Equatable, Identifiable {
     var id: UUID
     var title: String
     var path: String
+    var icon: String?
 
-    init(id: UUID = UUID(), title: String, path: String) {
+    init(id: UUID = UUID(), title: String, path: String, icon: String? = nil) {
         self.id = id
         self.title = title
         self.path = path
+        self.icon = icon
     }
 }
 
 struct CLIEntry: Codable, Equatable, Identifiable {
     var id: UUID
     var name: String
+    var note: String
     var actions: [CLIAction]
+    var icon: String?
 
-    init(id: UUID = UUID(), name: String, actions: [CLIAction] = []) {
+    init(id: UUID = UUID(), name: String, note: String = "", actions: [CLIAction] = [], icon: String? = nil) {
         self.id = id
         self.name = name
+        self.note = note
         self.actions = actions
+        self.icon = icon
     }
 
     // 向后兼容解码：先尝试新格式，失败则回退读取旧字段并转换
     private enum CodingKeys: String, CodingKey {
-        case id, name, actions
+        case id, name, note, actions, icon
         // 旧字段
         case startCommand, continueCommand, resumeCommand
         case startLabel, continueLabel, resumeLabel
@@ -137,6 +158,8 @@ struct CLIEntry: Codable, Equatable, Identifiable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
         name = try container.decode(String.self, forKey: .name)
+        note = try container.decodeIfPresent(String.self, forKey: .note) ?? ""
+        icon = try container.decodeIfPresent(String.self, forKey: .icon)
 
         // 优先解码新格式
         if let newActions = try container.decodeIfPresent([CLIAction].self, forKey: .actions) {
@@ -169,7 +192,9 @@ struct CLIEntry: Codable, Equatable, Identifiable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(name, forKey: .name)
+        try container.encode(note, forKey: .note)
         try container.encode(actions, forKey: .actions)
+        try container.encodeIfPresent(icon, forKey: .icon)
     }
 
     static let defaultCLIs: [CLIEntry] = [
@@ -224,12 +249,14 @@ struct CommandTemplate: Codable, Equatable, Identifiable {
     var name: String              // 模板名称，如 "Git checkout"
     var command: String            // 命令，如 "git checkout {branch}"
     var variables: [TemplateVariable]  // 从 command 中解析的变量列表
+    var icon: String?
 
-    init(id: UUID = UUID(), name: String, command: String, variables: [TemplateVariable] = []) {
+    init(id: UUID = UUID(), name: String, command: String, variables: [TemplateVariable] = [], icon: String? = nil) {
         self.id = id
         self.name = name
         self.command = command
         self.variables = variables
+        self.icon = icon
     }
 
     /// 用正则 \{([^}]+)\} 从 command 中解析占位符，同步 variables 列表

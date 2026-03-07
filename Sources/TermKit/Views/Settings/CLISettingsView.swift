@@ -4,6 +4,8 @@ import SwiftUI
 struct CLISettingsView: View {
     @EnvironmentObject private var model: TermKitModel
     @State private var selectedID: UUID?
+    @State private var showDeleteConfirm = false
+    @State private var pendingDeleteIndex: Int?
 
     private var clis: [CLIEntry] { model.config.clis }
 
@@ -14,15 +16,24 @@ struct CLISettingsView: View {
                 List(selection: $selectedID) {
                     ForEach(clis) { cli in
                         HStack {
-                            Image(systemName: "terminal")
+                            Image(systemName: cli.icon ?? "terminal")
                                 .foregroundStyle(.secondary)
-                            Text(cli.name)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(cli.name)
+                                    .fontWeight(.medium)
+                                Text(cli.note.isEmpty ? L10n.CLI.actionCount(cli.actions.count) : cli.note)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                                    .truncationMode(.tail)
+                            }
                             Spacer()
                         }
+                        .padding(.vertical, 4)
                         .tag(cli.id)
                     }
                     .onMove(perform: moveCLI)
-                    .onDelete(perform: deleteCLI)
+                    .onDelete(perform: requestDeleteCLI)
                 }
                 .listStyle(.inset(alternatesRowBackgrounds: true))
 
@@ -35,15 +46,15 @@ struct CLISettingsView: View {
                             .frame(width: 28, height: 28)
                             .contentShape(Rectangle())
                     }
-                    .help("添加 CLI 工具")
+                    .help(L10n.CLI.addCLI)
 
-                    Button(action: removeSelected) {
+                    Button(action: requestRemoveSelected) {
                         Image(systemName: "minus")
                             .frame(width: 28, height: 28)
                             .contentShape(Rectangle())
                     }
                     .disabled(selectedID == nil)
-                    .help("移除选中")
+                    .help(L10n.Common.removeSelected)
 
                     Spacer()
                 }
@@ -67,44 +78,71 @@ struct CLISettingsView: View {
                     Image(systemName: "terminal.fill")
                         .font(.system(size: 48))
                         .foregroundStyle(.tertiary)
-                    Text("选择或创建一个 CLI 工具")
+                    Text(L10n.CLI.selectOrCreateCLI)
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(nsColor: .controlBackgroundColor))
             }
         }
+        .confirmationDialog(
+            deleteConfirmTitle,
+            isPresented: $showDeleteConfirm,
+            titleVisibility: .visible
+        ) {
+            Button(L10n.Common.delete, role: .destructive) { confirmDelete() }
+            Button(L10n.Common.cancel, role: .cancel) { pendingDeleteIndex = nil }
+        }
+    }
+
+    // MARK: - 删除确认
+
+    private var deleteConfirmTitle: String {
+        if let idx = pendingDeleteIndex, clis.indices.contains(idx) {
+            return L10n.Common.confirmDeleteNamed(clis[idx].name)
+        }
+        return L10n.Common.confirmDelete
+    }
+
+    private func requestRemoveSelected() {
+        guard let id = selectedID,
+              let idx = clis.firstIndex(where: { $0.id == id }) else { return }
+        pendingDeleteIndex = idx
+        showDeleteConfirm = true
+    }
+
+    private func requestDeleteCLI(at offsets: IndexSet) {
+        guard let idx = offsets.first else { return }
+        pendingDeleteIndex = idx
+        showDeleteConfirm = true
+    }
+
+    private func confirmDelete() {
+        guard let idx = pendingDeleteIndex, clis.indices.contains(idx) else {
+            pendingDeleteIndex = nil
+            return
+        }
+        let removingID = clis[idx].id
+        var next = model.config
+        next.clis.remove(at: idx)
+        if selectedID == removingID { selectedID = nil }
+        model.saveConfig(next)
+        pendingDeleteIndex = nil
     }
 
     // MARK: - 操作
 
     private func addCLI() {
         var next = model.config
-        let entry = CLIEntry(name: "新 CLI 工具")
+        let entry = CLIEntry(name: L10n.CLI.newCLI)
         next.clis.append(entry)
         model.saveConfig(next)
         selectedID = entry.id
     }
 
-    private func removeSelected() {
-        guard let id = selectedID else { return }
-        var next = model.config
-        next.clis.removeAll { $0.id == id }
-        selectedID = nil              // 先清选中，避免 Binding 越界
-        model.saveConfig(next)
-    }
-
     private func moveCLI(from source: IndexSet, to destination: Int) {
         var next = model.config
         next.clis.move(fromOffsets: source, toOffset: destination)
-        model.saveConfig(next)
-    }
-
-    private func deleteCLI(at offsets: IndexSet) {
-        var next = model.config
-        let removing = offsets.map { next.clis[$0].id }
-        next.clis.remove(atOffsets: offsets)
-        if let id = selectedID, removing.contains(id) { selectedID = nil }  // 先清选中
         model.saveConfig(next)
     }
 }

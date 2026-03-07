@@ -51,7 +51,7 @@ final class CmdHoldMenuWindowController {
 
     func presentAddFolder(onSave: @escaping (String) -> Void) {
         let panel = NSOpenPanel()
-        panel.title = "选择文件夹"
+        panel.title = L10n.MenuDialog.chooseFolderTitle
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
@@ -64,15 +64,15 @@ final class CmdHoldMenuWindowController {
 
     func presentAddCLI(onSave: @escaping (CLIEntry) -> Void) {
         let alert = NSAlert()
-        alert.messageText = "添加 CLI"
-        alert.informativeText = "输入 CLI 名称（动作可在设置界面中添加）"
+        alert.messageText = L10n.MenuDialog.addCLITitle
+        alert.informativeText = L10n.MenuDialog.addCLIMessage
 
         let name = NSTextField(frame: NSRect(x: 0, y: 0, width: 360, height: 24))
         name.placeholderString = "Name (required)"
 
         alert.accessoryView = name
-        alert.addButton(withTitle: "保存")
-        alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: L10n.Common.save)
+        alert.addButton(withTitle: L10n.Common.cancel)
         let response = alert.runModal()
         guard response == .alertFirstButtonReturn else { return }
 
@@ -83,8 +83,8 @@ final class CmdHoldMenuWindowController {
 
     func presentAddAction(onSave: @escaping (String, String) -> Void) {
         let alert = NSAlert()
-        alert.messageText = "添加动作"
-        alert.informativeText = "输入动作名称与命令模板"
+        alert.messageText = L10n.MenuDialog.addActionTitle
+        alert.informativeText = L10n.MenuDialog.addActionMessage
 
         let stack = NSStackView()
         stack.orientation = .vertical
@@ -109,8 +109,8 @@ final class CmdHoldMenuWindowController {
         ])
 
         alert.accessoryView = container
-        alert.addButton(withTitle: "保存")
-        alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: L10n.Common.save)
+        alert.addButton(withTitle: L10n.Common.cancel)
         let response = alert.runModal()
         guard response == .alertFirstButtonReturn else { return }
 

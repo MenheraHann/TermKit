@@ -1,16 +1,54 @@
 import SwiftUI
+import ServiceManagement
 
 /// 通用设置面板
 struct GeneralSettingsView: View {
     @EnvironmentObject private var model: TermKitModel
 
+    @State private var launchAtLogin = (SMAppService.mainApp.status == .enabled)
+
     var body: some View {
         Form {
-            Section("快捷菜单") {
-                Toggle("启用快捷菜单", isOn: binding(\.features.enableCmdHoldMenu))
+            Section(L10n.General.language) {
+                Picker(L10n.General.interfaceLanguage, selection: binding(\.language)) {
+                    ForEach(AppLanguage.allCases, id: \.self) { lang in
+                        Text(lang.displayName).tag(lang)
+                    }
+                }
+            }
+
+            Section {
+                Toggle(L10n.General.launchAtLogin, isOn: Binding(
+                    get: { launchAtLogin },
+                    set: { newValue in
+                        do {
+                            if newValue {
+                                try SMAppService.mainApp.register()
+                            } else {
+                                try SMAppService.mainApp.unregister()
+                            }
+                            launchAtLogin = newValue
+                        } catch {
+                            NSLog("[TermKit] 开机自启动设置失败: %@", error.localizedDescription)
+                            launchAtLogin = (SMAppService.mainApp.status == .enabled)
+                        }
+                    }
+                ))
+                .toggleStyle(.switch)
+            }
+
+            Section(L10n.General.quickMenu) {
+                Toggle(L10n.MenuBar.enableQuickMenu, isOn: Binding(
+                    get: { model.config.features.enableCmdHoldMenu && !model.menu.isTemporarilyDisabled },
+                    set: { value in
+                        var next = model.config
+                        next.features.enableCmdHoldMenu = value
+                        model.saveConfig(next)
+                    }
+                ))
                     .toggleStyle(.switch)
 
-                Picker("触发修饰键", selection: binding(\.features.triggerKey)) {
+                Picker(L10n.General.triggerKey, selection: binding(\.features.triggerKey)) {
                     ForEach(TriggerModifierKey.allCases, id: \.self) { key in
                         Text(key.displayName).tag(key)
                     }
@@ -18,8 +56,8 @@ struct GeneralSettingsView: View {
                 .disabled(!model.config.features.enableCmdHoldMenu)
             }
 
-            Section("时间参数") {
-                LabeledContent("长按阈值") {
+            Section(L10n.General.timingParameters) {
+                LabeledContent(L10n.General.holdThreshold) {
                     HStack {
                         Text("\(model.config.timing.holdThresholdMs) ms")
                             .monospacedDigit()
@@ -29,7 +67,7 @@ struct GeneralSettingsView: View {
                     }
                 }
 
-                LabeledContent("剪贴板恢复延迟") {
+                LabeledContent(L10n.General.clipboardRestoreDelay) {
                     HStack {
                         Text("\(model.config.timing.clipboardRestoreDelayMs) ms")
                             .monospacedDigit()
@@ -40,17 +78,24 @@ struct GeneralSettingsView: View {
                 }
             }
 
-            Section("图片") {
-                VStack(alignment: .leading) {
-                    Text("保存目录")
-                    TextField("路径", text: binding(\.imagePaste.saveDirectory))
-                        .textFieldStyle(.roundedBorder)
+            Section(L10n.General.images) {
+                LabeledContent(L10n.General.saveDirectory) {
+                    HStack {
+                        Text(abbreviatePath(model.config.imagePaste.saveDirectory))
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Spacer()
+                        Button(L10n.Common.choose) { browseImageSaveDirectory() }
+                            .controlSize(.small)
+                    }
                 }
             }
 
             Section {
-                LabeledContent("配置文件") {
-                    Button("在 Finder 中显示") {
+                LabeledContent(L10n.General.configFile) {
+                    Button(L10n.General.showInFinder) {
                         ConfigStore.openConfigFolderInFinder()
                     }
                 }
@@ -58,6 +103,31 @@ struct GeneralSettingsView: View {
         }
         .formStyle(.grouped)
         .padding()
+    }
+
+    // MARK: - 文件夹选择
+
+    private func browseImageSaveDirectory() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.prompt = L10n.General.chooseSaveDirectory
+        // 尝试定位到当前目录
+        let current = (model.config.imagePaste.saveDirectory as NSString).expandingTildeInPath
+        panel.directoryURL = URL(fileURLWithPath: current)
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        var next = model.config
+        next.imagePaste.saveDirectory = url.path
+        model.saveConfig(next)
+    }
+
+    private func abbreviatePath(_ path: String) -> String {
+        let home = NSHomeDirectory()
+        if path.hasPrefix(home) {
+            return "~" + path.dropFirst(home.count)
+        }
+        return path
     }
 
     /// 通用 Binding 工厂：读取 config 的 keyPath，写入时保存

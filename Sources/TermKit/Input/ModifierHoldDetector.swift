@@ -34,6 +34,10 @@ final class ModifierHoldDetector {
     var onPaste: (() -> Void)?
     /// Delete 键回调
     var onDelete: (() -> Void)?
+    /// 关闭快捷键 1h 回调（- 键）
+    var onDisableTemporary: (() -> Void)?
+    /// 关闭快捷键回调（= 键）
+    var onDisablePermanent: (() -> Void)?
 
     // MARK: - 私有状态
 
@@ -242,6 +246,10 @@ final class ModifierHoldDetector {
             onDelete?()
         case 9:  // V
             onPaste?()
+        case 27: // -（关闭快捷键 1h）
+            onDisableTemporary?()
+        case 24: // =（关闭快捷键）
+            onDisablePermanent?()
         default:
             break
         }
@@ -266,6 +274,12 @@ final class ModifierHoldDetector {
                 scheduleShow()
             }
         } else if !isTargetDown && wasTargetDown {
+            // 验证物理按键状态：sendClearLine 等模拟按键会产生 flagsChanged，
+            // 其 flags 可能不含物理按住的修饰键，导致误判为释放
+            if CGEventSource.keyState(.hidSystemState, key: triggerKey.cgKeyCode) {
+                return  // 目标键仍物理按住，忽略合成事件的假释放
+            }
+
             // 目标键释放
             wasTargetDown = false
 
@@ -352,11 +366,11 @@ final class ModifierHoldDetector {
 
     private func showAccessibilityAlert() {
         let alert = NSAlert()
-        alert.messageText = "需要辅助功能权限"
-        alert.informativeText = "TermKit 需要辅助功能权限来检测修饰键长按。请在系统设置中授权后重新启用此功能。"
+        alert.messageText = L10n.Permission.accessibilityRequired
+        alert.informativeText = L10n.Permission.accessibilityMessage
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "打开系统设置")
-        alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: L10n.Permission.openSystemSettings)
+        alert.addButton(withTitle: L10n.Common.cancel)
 
         let response = alert.runModal()
         if response == .alertFirstButtonReturn {
@@ -407,6 +421,8 @@ private let kMenuKeyCodes: Set<UInt16> = [
     50,   // `/~
     51,   // Delete/Backspace
     9,    // V
+    27,   // -（关闭快捷键 1h）
+    24,   // =（关闭快捷键）
 ]
 
 // MARK: - C 回调函数

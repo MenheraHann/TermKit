@@ -15,7 +15,7 @@ final class CmdHoldMenuState: ObservableObject {
         if level == .root {
             return currentItems.filter { item in
                 switch item.kind {
-                case .pasteImage, .deleteInput: return false
+                case .pasteImage, .deleteInput, .disableTemporary, .disablePermanent: return false
                 default: return true
                 }
             }.count
@@ -27,39 +27,41 @@ final class CmdHoldMenuState: ObservableObject {
         switch level {
         case .root:
             var items = [
-                CmdHoldMenuItem(title: "打开文件夹", kind: .openFolders),
-                CmdHoldMenuItem(title: "选择启动 CLI", kind: .openCLIs),
+                CmdHoldMenuItem(title: L10n.Menu.openFolders, icon: "folder.fill", kind: .openFolders),
+                CmdHoldMenuItem(title: L10n.Menu.selectCLI, icon: "terminal", kind: .openCLIs),
             ]
             if !config.commandTemplates.isEmpty {
-                items.append(CmdHoldMenuItem(title: "命令模板", kind: .openTemplates))
+                items.append(CmdHoldMenuItem(title: L10n.Menu.commandTemplates, icon: "doc.text", kind: .openTemplates))
             }
             items.append(contentsOf: [
-                CmdHoldMenuItem(title: "粘贴", kind: .pasteImage),
-                CmdHoldMenuItem(title: "清空输入", kind: .deleteInput),
+                CmdHoldMenuItem(title: L10n.Menu.paste, icon: "doc.on.clipboard", kind: .pasteImage),
+                CmdHoldMenuItem(title: L10n.Menu.clearInput, icon: "delete.left", kind: .deleteInput),
+                CmdHoldMenuItem(title: L10n.Menu.disableTemporary, icon: "moon", kind: .disableTemporary),
+                CmdHoldMenuItem(title: L10n.Menu.disablePermanent, icon: "moon.fill", kind: .disablePermanent),
             ])
             return items
         case .folders:
             var items = config.folders.map { folder in
-                CmdHoldMenuItem(title: folder.title, subtitle: folder.path, kind: .folder(folder))
+                CmdHoldMenuItem(title: folder.title, subtitle: folder.path, icon: folder.icon ?? "folder.fill", kind: .folder(folder))
             }
-            items.append(CmdHoldMenuItem(title: "添加文件夹…", kind: .addFolder))
+            items.append(CmdHoldMenuItem(title: L10n.Menu.addFolderEllipsis, icon: "plus.circle", kind: .addFolder))
             return items
         case .clis:
             var items = config.clis.map { cli in
-                CmdHoldMenuItem(title: cli.name, kind: .cli(cli))
+                CmdHoldMenuItem(title: cli.name, icon: cli.icon ?? "terminal", kind: .cli(cli))
             }
-            items.append(CmdHoldMenuItem(title: "添加 CLI…", kind: .addCLI))
+            items.append(CmdHoldMenuItem(title: L10n.Menu.addCLIEllipsis, icon: "plus.circle", kind: .addCLI))
             return items
         case .actions:
             guard let cli = selectedCLI else { return [] }
             var items = cli.actions.map { action in
-                CmdHoldMenuItem(title: action.title, subtitle: action.command, kind: .actionCommand(action.command))
+                CmdHoldMenuItem(title: action.title, subtitle: action.command, icon: "command", kind: .actionCommand(action.command))
             }
-            items.append(CmdHoldMenuItem(title: "添加动作…", kind: .addAction(cli.id)))
+            items.append(CmdHoldMenuItem(title: L10n.Menu.addActionEllipsis, icon: "plus.circle", kind: .addAction(cli.id)))
             return items
         case .templates:
             return config.commandTemplates.map { tmpl in
-                CmdHoldMenuItem(title: tmpl.name, subtitle: tmpl.command, kind: .template(tmpl))
+                CmdHoldMenuItem(title: tmpl.name, subtitle: tmpl.command, icon: tmpl.icon ?? "doc.text", kind: .template(tmpl))
             }
         }
     }
@@ -69,15 +71,19 @@ final class CmdHoldMenuState: ObservableObject {
         case .pasteText(let text):
             return "⏎ " + abbreviateCommand(text)
         case .pasteImagePath:
-            return "⏎ 粘贴剪贴板里的 文字 或 图片"
+            return L10n.Menu.hintPasteClipboard
         case .deleteInput:
-            return "⏎ 清空输入"
+            return L10n.Menu.hintClearInput
         case .pasteTemplate(let tmpl):
             let hasUnresolved = tmpl.variables.contains { $0.defaultValue.isEmpty }
             if hasUnresolved {
-                return "⚠ 模板有未填充的变量，请先在配置中设置默认值"
+                return L10n.Menu.hintTemplateUnresolved
             }
             return "⏎ " + abbreviateCommand(tmpl.resolvedCommand())
+        case .disableTemporary:
+            return L10n.Menu.hintDisableTemporary
+        case .disablePermanent:
+            return L10n.Menu.hintDisablePermanent
         case .showAddFolder, .showAddCLI, .showAddAction, .none:
             return nil
         }
@@ -98,6 +104,10 @@ final class CmdHoldMenuState: ObservableObject {
             return .pasteImagePath
         case .deleteInput:
             return .deleteInput
+        case .disableTemporary:
+            return .disableTemporary
+        case .disablePermanent:
+            return .disablePermanent
         case .addFolder:
             return .showAddFolder
         case .addCLI:
@@ -135,6 +145,10 @@ final class CmdHoldMenuState: ObservableObject {
         selectedCLI = nil
     }
 
+    func deselect() {
+        selectedIndex = -1
+    }
+
     func select(index: Int) {
         guard !currentItems.isEmpty else { return }
         selectedIndex = min(max(index, 0), currentItems.count - 1)
@@ -146,16 +160,16 @@ final class CmdHoldMenuState: ObservableObject {
         switch item.kind {
         case .openFolders:
             level = .folders
-            breadcrumb = ["TermKit", "打开文件夹"]
+            breadcrumb = ["TermKit", L10n.Menu.openFolders]
             selectedIndex = -1
         case .openCLIs:
             level = .clis
-            breadcrumb = ["TermKit", "选择启动 CLI"]
+            breadcrumb = ["TermKit", L10n.Menu.selectCLI]
             selectedIndex = -1
         case .folder(let folder):
             selectedFolder = folder
             level = .clis
-            breadcrumb = ["TermKit", folder.title, "选择启动 CLI"]
+            breadcrumb = ["TermKit", folder.title, L10n.Menu.selectCLI]
             selectedIndex = -1
         case .cli(let cli):
             selectedCLI = cli
@@ -164,9 +178,9 @@ final class CmdHoldMenuState: ObservableObject {
             selectedIndex = -1
         case .openTemplates:
             level = .templates
-            breadcrumb = ["TermKit", "命令模板"]
+            breadcrumb = ["TermKit", L10n.Menu.commandTemplates]
             selectedIndex = -1
-        case .pasteImage, .deleteInput, .addFolder, .addCLI, .addAction, .actionCommand, .template:
+        case .pasteImage, .deleteInput, .disableTemporary, .disablePermanent, .addFolder, .addCLI, .addAction, .actionCommand, .template:
             break
         }
     }
@@ -205,7 +219,7 @@ final class CmdHoldMenuState: ObservableObject {
         case .clis:
             if let folder = selectedFolder {
                 level = .folders
-                breadcrumb = ["TermKit", "打开文件夹"]
+                breadcrumb = ["TermKit", L10n.Menu.openFolders]
                 if let idx = config.folders.firstIndex(where: { $0.id == folder.id }) {
                     selectedIndex = idx
                 } else {
@@ -217,9 +231,9 @@ final class CmdHoldMenuState: ObservableObject {
         case .actions:
             level = .clis
             if let folder = selectedFolder {
-                breadcrumb = ["TermKit", folder.title, "选择启动 CLI"]
+                breadcrumb = ["TermKit", folder.title, L10n.Menu.selectCLI]
             } else {
-                breadcrumb = ["TermKit", "选择启动 CLI"]
+                breadcrumb = ["TermKit", L10n.Menu.selectCLI]
             }
             if let cli = selectedCLI, let idx = config.clis.firstIndex(where: { $0.id == cli.id }) {
                 selectedIndex = idx
@@ -284,6 +298,7 @@ struct CmdHoldMenuItem: Identifiable, Equatable {
     var id = UUID()
     var title: String
     var subtitle: String?
+    var icon: String?
     var kind: Kind
 
     enum Kind: Equatable {
@@ -292,6 +307,8 @@ struct CmdHoldMenuItem: Identifiable, Equatable {
         case openTemplates
         case pasteImage
         case deleteInput
+        case disableTemporary
+        case disablePermanent
         case addFolder
         case addCLI
         case addAction(UUID)
@@ -306,6 +323,8 @@ enum CmdHoldMenuConfirmedAction: Equatable {
     case pasteText(String)
     case pasteImagePath
     case deleteInput
+    case disableTemporary
+    case disablePermanent
     case pasteTemplate(CommandTemplate)
     case showAddFolder
     case showAddCLI
