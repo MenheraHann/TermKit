@@ -5,6 +5,7 @@ import SwiftUI
 final class CmdHoldMenuWindowController {
     private var panel: NSPanel?
     private var hostingView: NSHostingView<CmdHoldMenuView>?
+    private var lastMouseLocation: NSPoint = .zero
 
     var onRequestSelectIndex: ((Int) -> Void)?
     var onRequestCommitSelection: (() -> Void)?
@@ -19,11 +20,15 @@ final class CmdHoldMenuWindowController {
         // 切换层级时重新调整面板大小
         let fittingSize = hostingView.fittingSize
         let newSize = NSSize(width: max(fittingSize.width, 240), height: fittingSize.height)
-        let origin = panel.frame.origin
-        // 保持左上角不动（macOS 坐标系 y 从底部起）
-        let newOrigin = NSPoint(x: origin.x, y: origin.y + panel.frame.height - newSize.height)
-        let clamped = clampToScreen(origin: newOrigin, size: newSize)
-        panel.setFrame(NSRect(origin: clamped, size: newSize), display: true, animate: false)
+        // 层级切换时也用智能定位，根据鼠标位置重新翻转
+        if lastMouseLocation != .zero {
+            let newOrigin = smartPosition(mouse: lastMouseLocation, size: newSize)
+            panel.setFrame(NSRect(origin: newOrigin, size: newSize), display: true, animate: false)
+        } else {
+            let origin = panel.frame.origin
+            let newOrigin = NSPoint(x: origin.x, y: origin.y + panel.frame.height - newSize.height)
+            panel.setFrame(NSRect(origin: newOrigin, size: newSize), display: true, animate: false)
+        }
     }
 
     func show(at mouseLocation: NSPoint, state: CmdHoldMenuState) {
@@ -36,10 +41,10 @@ final class CmdHoldMenuWindowController {
         // 让面板大小跟随 SwiftUI 内容
         let fittingSize = hostingView.fittingSize
         let panelSize = NSSize(width: max(fittingSize.width, 240), height: fittingSize.height)
-        // 面板出现在光标右下方（类似右键菜单的位置）
-        let origin = NSPoint(x: mouseLocation.x, y: mouseLocation.y - panelSize.height)
-        let clamped = clampToScreen(origin: origin, size: panelSize)
-        panel.setFrame(NSRect(origin: clamped, size: panelSize), display: true)
+        // 智能定位：根据鼠标位置自动翻转菜单方向
+        lastMouseLocation = mouseLocation
+        let origin = smartPosition(mouse: mouseLocation, size: panelSize)
+        panel.setFrame(NSRect(origin: origin, size: panelSize), display: true)
 
         // 不抢焦点
         panel.orderFrontRegardless()
@@ -122,32 +127,37 @@ final class CmdHoldMenuWindowController {
 
     // MARK: - Private
 
-    /// 将面板 origin 钳制到光标所在屏幕的可见区域内
-    private func clampToScreen(origin: NSPoint, size: NSSize) -> NSPoint {
-        let mouseLocation = NSEvent.mouseLocation
-        let screen = NSScreen.screens.first { $0.frame.contains(mouseLocation) }
+    /// 智能定位：根据鼠标位置决定菜单弹出方向
+    /// - 默认：鼠标右下方
+    /// - 右侧溢出：翻到鼠标左侧
+    /// - 底部溢出：翻到鼠标上方
+    /// - 极端情况仍做边界兜底 clamp
+    private func smartPosition(mouse: NSPoint, size: NSSize) -> NSPoint {
+        let screen = NSScreen.screens.first { $0.frame.contains(mouse) }
             ?? NSScreen.main
-        guard let visibleFrame = screen?.visibleFrame else { return origin }
+        guard let visibleFrame = screen?.visibleFrame else {
+            return NSPoint(x: mouse.x, y: mouse.y - size.height)
+        }
 
-        var x = origin.x
-        var y = origin.y
+        // X 轴：右侧放不下就翻到左侧
+        var x: CGFloat
+        if mouse.x + size.width > visibleFrame.maxX {
+            x = mouse.x - size.width
+        } else {
+            x = mouse.x
+        }
 
-        // 右侧溢出 → 左移
-        if x + size.width > visibleFrame.maxX {
-            x = visibleFrame.maxX - size.width
+        // Y 轴：下方放不下就翻到上方（macOS 坐标系 y 从底部起）
+        var y: CGFloat
+        if mouse.y - size.height < visibleFrame.minY {
+            y = mouse.y
+        } else {
+            y = mouse.y - size.height
         }
-        // 左侧溢出 → 右移
-        if x < visibleFrame.minX {
-            x = visibleFrame.minX
-        }
-        // 底部溢出 → 上移
-        if y < visibleFrame.minY {
-            y = visibleFrame.minY
-        }
-        // 顶部溢出 → 下移
-        if y + size.height > visibleFrame.maxY {
-            y = visibleFrame.maxY - size.height
-        }
+
+        // 边界兜底：防止极端情况（屏幕比菜单还小）
+        x = max(visibleFrame.minX, min(x, visibleFrame.maxX - size.width))
+        y = max(visibleFrame.minY, min(y, visibleFrame.maxY - size.height))
 
         return NSPoint(x: x, y: y)
     }
