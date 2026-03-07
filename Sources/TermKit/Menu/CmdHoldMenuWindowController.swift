@@ -62,7 +62,7 @@ final class CmdHoldMenuWindowController {
         panel.allowsMultipleSelection = false
         panel.canCreateDirectories = true
 
-        NSApp.activate(ignoringOtherApps: true)
+        if #available(macOS 14.0, *) { NSApp.activate() } else { NSApp.activate(ignoringOtherApps: true) }
         guard panel.runModal() == .OK, let url = panel.url else { return }
         onSave(url.path)
     }
@@ -73,7 +73,7 @@ final class CmdHoldMenuWindowController {
         alert.informativeText = L10n.MenuDialog.addCLIMessage
 
         let name = NSTextField(frame: NSRect(x: 0, y: 0, width: 360, height: 24))
-        name.placeholderString = "Name (required)"
+        name.placeholderString = L10n.MenuDialog.placeholderName
 
         alert.accessoryView = name
         alert.addButton(withTitle: L10n.Common.save)
@@ -98,9 +98,9 @@ final class CmdHoldMenuWindowController {
         stack.translatesAutoresizingMaskIntoConstraints = false
 
         let title = NSTextField(frame: NSRect(x: 0, y: 0, width: 360, height: 24))
-        title.placeholderString = "Title (required)"
+        title.placeholderString = L10n.MenuDialog.placeholderTitle
         let cmd = NSTextField(frame: NSRect(x: 0, y: 0, width: 360, height: 24))
-        cmd.placeholderString = "Command (required)"
+        cmd.placeholderString = L10n.MenuDialog.placeholderCommand
         stack.addArrangedSubview(title)
         stack.addArrangedSubview(cmd)
 

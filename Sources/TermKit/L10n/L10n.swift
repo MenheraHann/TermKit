@@ -441,7 +441,7 @@ enum L10n {
             case .es:     return "\(n) acción\(n == 1 ? "" : "es")"
             case .fr:     return "\(n) action\(n == 1 ? "" : "s")"
             case .de:     return "\(n) Aktion\(n == 1 ? "" : "en")"
-            case .pt:     return "\(n) ação\(n == 1 ? "" : "ões")"
+            case .pt:     return n == 1 ? "1 ação" : "\(n) ações"
             }
         }
 
@@ -943,6 +943,20 @@ enum L10n {
             }
         }
 
+        static var slashCommands: String {
+            switch L10n.current {
+            case .zhHans: return "交互式命令"
+            case .zhHant: return "互動式命令"
+            case .en:     return "Slash Commands"
+            case .ja:     return "スラッシュコマンド"
+            case .ko:     return "슬래시 명령"
+            case .es:     return "Comandos rápidos"
+            case .fr:     return "Commandes slash"
+            case .de:     return "Slash-Befehle"
+            case .pt:     return "Comandos rápidos"
+            }
+        }
+
         static var paste: String {
             switch L10n.current {
             case .zhHans: return "粘贴"
@@ -1336,6 +1350,291 @@ enum L10n {
 
     // MARK: - 菜单弹窗（CmdHoldMenuWindowController）
 
+    // MARK: - Slash Commands 菜单项
+
+    enum SlashCommand {
+        static var clear: String {
+            switch L10n.current {
+            case .zhHans: return "清空对话历史"
+            case .zhHant: return "清空對話歷史"
+            case .en:     return "Clear History"
+            case .ja:     return "履歴をクリア"
+            case .ko:     return "대화 기록 삭제"
+            case .es:     return "Borrar historial"
+            case .fr:     return "Effacer l'historique"
+            case .de:     return "Verlauf löschen"
+            case .pt:     return "Limpar histórico"
+            }
+        }
+        static var compact: String {
+            switch L10n.current {
+            case .zhHans: return "压缩对话"
+            case .zhHant: return "壓縮對話"
+            case .en:     return "Compact Chat"
+            case .ja:     return "チャットを圧縮"
+            case .ko:     return "대화 압축"
+            case .es:     return "Compactar chat"
+            case .fr:     return "Compacter la conversation"
+            case .de:     return "Chat komprimieren"
+            case .pt:     return "Compactar conversa"
+            }
+        }
+        static var model: String {
+            switch L10n.current {
+            case .zhHans: return "切换模型"
+            case .zhHant: return "切換模型"
+            case .en:     return "Switch Model"
+            case .ja:     return "モデルを切替"
+            case .ko:     return "모델 전환"
+            case .es:     return "Cambiar modelo"
+            case .fr:     return "Changer de modèle"
+            case .de:     return "Modell wechseln"
+            case .pt:     return "Trocar modelo"
+            }
+        }
+        static var config: String {
+            switch L10n.current {
+            case .zhHans: return "查看配置"
+            case .zhHant: return "查看設定"
+            case .en:     return "View Config"
+            case .ja:     return "設定を表示"
+            case .ko:     return "설정 보기"
+            case .es:     return "Ver configuración"
+            case .fr:     return "Voir la configuration"
+            case .de:     return "Konfiguration anzeigen"
+            case .pt:     return "Ver configuração"
+            }
+        }
+        static var cost: String {
+            switch L10n.current {
+            case .zhHans: return "查看用量和费用"
+            case .zhHant: return "查看用量和費用"
+            case .en:     return "View Usage & Cost"
+            case .ja:     return "使用量とコストを表示"
+            case .ko:     return "사용량 및 비용 보기"
+            case .es:     return "Ver uso y costes"
+            case .fr:     return "Voir utilisation et coûts"
+            case .de:     return "Nutzung & Kosten anzeigen"
+            case .pt:     return "Ver uso e custos"
+            }
+        }
+        static var memory: String {
+            switch L10n.current {
+            case .zhHans: return "编辑 CLAUDE.md"
+            case .zhHant: return "編輯 CLAUDE.md"
+            case .en:     return "Edit CLAUDE.md"
+            case .ja:     return "CLAUDE.md を編集"
+            case .ko:     return "CLAUDE.md 편집"
+            case .es:     return "Editar CLAUDE.md"
+            case .fr:     return "Modifier CLAUDE.md"
+            case .de:     return "CLAUDE.md bearbeiten"
+            case .pt:     return "Editar CLAUDE.md"
+            }
+        }
+        static var review: String {
+            switch L10n.current {
+            case .zhHans: return "代码审查"
+            case .zhHant: return "程式碼審查"
+            case .en:     return "Code Review"
+            case .ja:     return "コードレビュー"
+            case .ko:     return "코드 리뷰"
+            case .es:     return "Revisión de código"
+            case .fr:     return "Revue de code"
+            case .de:     return "Code-Review"
+            case .pt:     return "Revisão de código"
+            }
+        }
+        static var permissions: String {
+            switch L10n.current {
+            case .zhHans: return "管理工具权限"
+            case .zhHant: return "管理工具權限"
+            case .en:     return "Manage Permissions"
+            case .ja:     return "ツール権限を管理"
+            case .ko:     return "도구 권한 관리"
+            case .es:     return "Gestionar permisos"
+            case .fr:     return "Gérer les autorisations"
+            case .de:     return "Berechtigungen verwalten"
+            case .pt:     return "Gerenciar permissões"
+            }
+        }
+        static var vim: String {
+            switch L10n.current {
+            case .zhHans: return "切换 vim 模式"
+            case .zhHant: return "切換 vim 模式"
+            case .en:     return "Toggle Vim Mode"
+            case .ja:     return "vim モードを切替"
+            case .ko:     return "vim 모드 전환"
+            case .es:     return "Alternar modo vim"
+            case .fr:     return "Basculer le mode vim"
+            case .de:     return "Vim-Modus umschalten"
+            case .pt:     return "Alternar modo vim"
+            }
+        }
+        static var help: String {
+            switch L10n.current {
+            case .zhHans: return "帮助"
+            case .zhHant: return "幫助"
+            case .en:     return "Help"
+            case .ja:     return "ヘルプ"
+            case .ko:     return "도움말"
+            case .es:     return "Ayuda"
+            case .fr:     return "Aide"
+            case .de:     return "Hilfe"
+            case .pt:     return "Ajuda"
+            }
+        }
+    }
+
+    // MARK: - 默认 CLI 动作标题
+
+    enum DefaultCLI {
+        static var newChat: String {
+            switch L10n.current {
+            case .zhHans: return "新建对话"
+            case .zhHant: return "新建對話"
+            case .en:     return "New Chat"
+            case .ja:     return "新規チャット"
+            case .ko:     return "새 대화"
+            case .es:     return "Nueva conversación"
+            case .fr:     return "Nouvelle conversation"
+            case .de:     return "Neuer Chat"
+            case .pt:     return "Nova conversa"
+            }
+        }
+        static var continueLast: String {
+            switch L10n.current {
+            case .zhHans: return "继续上次对话"
+            case .zhHant: return "繼續上次對話"
+            case .en:     return "Continue Last"
+            case .ja:     return "前回の続き"
+            case .ko:     return "이전 대화 계속"
+            case .es:     return "Continuar última"
+            case .fr:     return "Reprendre la dernière"
+            case .de:     return "Letzte fortsetzen"
+            case .pt:     return "Continuar última"
+            }
+        }
+        static var resumeHistory: String {
+            switch L10n.current {
+            case .zhHans: return "恢复历史对话"
+            case .zhHant: return "恢復歷史對話"
+            case .en:     return "Resume History"
+            case .ja:     return "履歴から再開"
+            case .ko:     return "기록 복원"
+            case .es:     return "Reanudar historial"
+            case .fr:     return "Reprendre l'historique"
+            case .de:     return "Verlauf fortsetzen"
+            case .pt:     return "Retomar histórico"
+            }
+        }
+        static var showVersion: String {
+            switch L10n.current {
+            case .zhHans: return "显示版本"
+            case .zhHant: return "顯示版本"
+            case .en:     return "Show Version"
+            case .ja:     return "バージョン表示"
+            case .ko:     return "버전 표시"
+            case .es:     return "Mostrar versión"
+            case .fr:     return "Afficher la version"
+            case .de:     return "Version anzeigen"
+            case .pt:     return "Mostrar versão"
+            }
+        }
+        static var showHelp: String {
+            switch L10n.current {
+            case .zhHans: return "显示帮助"
+            case .zhHant: return "顯示幫助"
+            case .en:     return "Show Help"
+            case .ja:     return "ヘルプを表示"
+            case .ko:     return "도움말 표시"
+            case .es:     return "Mostrar ayuda"
+            case .fr:     return "Afficher l'aide"
+            case .de:     return "Hilfe anzeigen"
+            case .pt:     return "Mostrar ajuda"
+            }
+        }
+        static var listMCPServers: String {
+            switch L10n.current {
+            case .zhHans: return "列出 MCP 服务器"
+            case .zhHant: return "列出 MCP 伺服器"
+            case .en:     return "List MCP Servers"
+            case .ja:     return "MCP サーバー一覧"
+            case .ko:     return "MCP 서버 목록"
+            case .es:     return "Listar servidores MCP"
+            case .fr:     return "Lister les serveurs MCP"
+            case .de:     return "MCP-Server auflisten"
+            case .pt:     return "Listar servidores MCP"
+            }
+        }
+        static var checkHealth: String {
+            switch L10n.current {
+            case .zhHans: return "检查安装健康状态"
+            case .zhHant: return "檢查安裝健康狀態"
+            case .en:     return "Check Health"
+            case .ja:     return "インストール状態を確認"
+            case .ko:     return "설치 상태 확인"
+            case .es:     return "Comprobar estado"
+            case .fr:     return "Vérifier l'état"
+            case .de:     return "Installation prüfen"
+            case .pt:     return "Verificar integridade"
+            }
+        }
+        static var checkUpdate: String {
+            switch L10n.current {
+            case .zhHans: return "检查并更新"
+            case .zhHant: return "檢查並更新"
+            case .en:     return "Check for Updates"
+            case .ja:     return "アップデートを確認"
+            case .ko:     return "업데이트 확인"
+            case .es:     return "Buscar actualizaciones"
+            case .fr:     return "Vérifier les mises à jour"
+            case .de:     return "Nach Updates suchen"
+            case .pt:     return "Verificar atualizações"
+            }
+        }
+        static var viewConfig: String {
+            switch L10n.current {
+            case .zhHans: return "查看/修改配置"
+            case .zhHant: return "查看/修改設定"
+            case .en:     return "View/Edit Config"
+            case .ja:     return "設定を表示/編集"
+            case .ko:     return "설정 보기/편집"
+            case .es:     return "Ver/editar configuración"
+            case .fr:     return "Voir/modifier la configuration"
+            case .de:     return "Konfiguration anzeigen/bearbeiten"
+            case .pt:     return "Ver/editar configuração"
+            }
+        }
+        static var launch: String {
+            switch L10n.current {
+            case .zhHans: return "启动"
+            case .zhHant: return "啟動"
+            case .en:     return "Launch"
+            case .ja:     return "起動"
+            case .ko:     return "실행"
+            case .es:     return "Iniciar"
+            case .fr:     return "Lancer"
+            case .de:     return "Starten"
+            case .pt:     return "Iniciar"
+            }
+        }
+        static var restoreChatHistory: String {
+            switch L10n.current {
+            case .zhHans: return "恢复聊天记录"
+            case .zhHant: return "恢復聊天記錄"
+            case .en:     return "Restore Chat History"
+            case .ja:     return "チャット履歴を復元"
+            case .ko:     return "채팅 기록 복원"
+            case .es:     return "Restaurar historial"
+            case .fr:     return "Restaurer l'historique"
+            case .de:     return "Chatverlauf wiederherstellen"
+            case .pt:     return "Restaurar histórico"
+            }
+        }
+    }
+
+    // MARK: - 菜单弹窗对话框
+
     enum MenuDialog {
         static var chooseFolderTitle: String {
             switch L10n.current {
@@ -1404,6 +1703,48 @@ enum L10n {
             case .fr:     return "Saisissez le nom de l'action et la commande"
             case .de:     return "Aktionsname und Befehl eingeben"
             case .pt:     return "Digite o nome da ação e o comando"
+            }
+        }
+
+        static var placeholderName: String {
+            switch L10n.current {
+            case .zhHans: return "名称（必填）"
+            case .zhHant: return "名稱（必填）"
+            case .en:     return "Name (required)"
+            case .ja:     return "名前（必須）"
+            case .ko:     return "이름 (필수)"
+            case .es:     return "Nombre (obligatorio)"
+            case .fr:     return "Nom (requis)"
+            case .de:     return "Name (erforderlich)"
+            case .pt:     return "Nome (obrigatório)"
+            }
+        }
+
+        static var placeholderTitle: String {
+            switch L10n.current {
+            case .zhHans: return "标题（必填）"
+            case .zhHant: return "標題（必填）"
+            case .en:     return "Title (required)"
+            case .ja:     return "タイトル（必須）"
+            case .ko:     return "제목 (필수)"
+            case .es:     return "Título (obligatorio)"
+            case .fr:     return "Titre (requis)"
+            case .de:     return "Titel (erforderlich)"
+            case .pt:     return "Título (obrigatório)"
+            }
+        }
+
+        static var placeholderCommand: String {
+            switch L10n.current {
+            case .zhHans: return "命令（必填）"
+            case .zhHant: return "命令（必填）"
+            case .en:     return "Command (required)"
+            case .ja:     return "コマンド（必須）"
+            case .ko:     return "명령 (필수)"
+            case .es:     return "Comando (obligatorio)"
+            case .fr:     return "Commande (requis)"
+            case .de:     return "Befehl (erforderlich)"
+            case .pt:     return "Comando (obrigatório)"
             }
         }
     }

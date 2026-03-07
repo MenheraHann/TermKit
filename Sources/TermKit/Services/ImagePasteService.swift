@@ -34,7 +34,7 @@ final class ImagePasteService {
     private func timestamp() -> String {
         let fmt = DateFormatter()
         fmt.locale = Locale(identifier: "en_US_POSIX")
-        fmt.dateFormat = "yyyyMMdd-HHmmss"
+        fmt.dateFormat = "yyyyMMdd-HHmmss-SSS"
         return fmt.string(from: Date())
     }
 }

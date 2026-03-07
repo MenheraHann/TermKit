@@ -33,11 +33,12 @@ final class CmdHoldMenuState: ObservableObject {
             if !config.commandTemplates.isEmpty {
                 items.append(CmdHoldMenuItem(title: L10n.Menu.commandTemplates, icon: "doc.text", kind: .openTemplates))
             }
+            items.append(CmdHoldMenuItem(title: L10n.Menu.slashCommands, icon: "slash.circle", kind: .openSlashCommands))
             items.append(contentsOf: [
                 CmdHoldMenuItem(title: L10n.Menu.paste, icon: "doc.on.clipboard", kind: .pasteImage),
                 CmdHoldMenuItem(title: L10n.Menu.clearInput, icon: "delete.left", kind: .deleteInput),
                 CmdHoldMenuItem(title: L10n.Menu.disableTemporary, icon: "zzz", kind: .disableTemporary),
-                CmdHoldMenuItem(title: L10n.Menu.disablePermanent, icon: "togglepower", kind: .disablePermanent),
+                CmdHoldMenuItem(title: L10n.Menu.disablePermanent, icon: "switch.2", kind: .disablePermanent),
             ])
             return items
         case .folders:
@@ -63,6 +64,19 @@ final class CmdHoldMenuState: ObservableObject {
             return config.commandTemplates.map { tmpl in
                 CmdHoldMenuItem(title: tmpl.name, subtitle: tmpl.command, icon: tmpl.icon ?? "doc.text", kind: .template(tmpl))
             }
+        case .slashCommands:
+            return [
+                CmdHoldMenuItem(title: L10n.SlashCommand.clear, subtitle: "/clear", icon: nil, kind: .actionCommand("/clear")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.compact, subtitle: "/compact", icon: nil, kind: .actionCommand("/compact")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.model, subtitle: "/model", icon: nil, kind: .actionCommand("/model")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.config, subtitle: "/config", icon: nil, kind: .actionCommand("/config")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.cost, subtitle: "/cost", icon: nil, kind: .actionCommand("/cost")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.memory, subtitle: "/memory", icon: nil, kind: .actionCommand("/memory")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.review, subtitle: "/review", icon: nil, kind: .actionCommand("/review")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.permissions, subtitle: "/permissions", icon: nil, kind: .actionCommand("/permissions")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.vim, subtitle: "/vim", icon: nil, kind: .actionCommand("/vim")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.help, subtitle: "/help", icon: nil, kind: .actionCommand("/help")),
+            ]
         }
     }
 
@@ -128,7 +142,7 @@ final class CmdHoldMenuState: ObservableObject {
                 return .pasteText(command)
             }
             return nil
-        case .openFolders, .openCLIs, .openTemplates:
+        case .openFolders, .openCLIs, .openTemplates, .openSlashCommands:
             return nil
         }
     }
@@ -180,6 +194,10 @@ final class CmdHoldMenuState: ObservableObject {
             level = .templates
             breadcrumb = ["TermKit", L10n.Menu.commandTemplates]
             selectedIndex = -1
+        case .openSlashCommands:
+            level = .slashCommands
+            breadcrumb = ["TermKit", L10n.Menu.slashCommands]
+            selectedIndex = -1
         case .pasteImage, .deleteInput, .disableTemporary, .disablePermanent, .addFolder, .addCLI, .addAction, .actionCommand, .template:
             break
         }
@@ -214,7 +232,7 @@ final class CmdHoldMenuState: ObservableObject {
         switch level {
         case .root:
             break
-        case .folders, .templates:
+        case .folders, .templates, .slashCommands:
             reset()
         case .clis:
             if let folder = selectedFolder {
@@ -285,6 +303,7 @@ enum CmdHoldMenuLevel: Equatable {
     case clis
     case actions
     case templates
+    case slashCommands
 }
 
 enum CmdHoldMenuNavigation: Equatable {
@@ -295,16 +314,25 @@ enum CmdHoldMenuNavigation: Equatable {
 }
 
 struct CmdHoldMenuItem: Identifiable, Equatable {
-    var id = UUID()
+    var id: String
     var title: String
     var subtitle: String?
     var icon: String?
     var kind: Kind
 
+    init(title: String, subtitle: String? = nil, icon: String?, kind: Kind) {
+        self.id = kind.stableID
+        self.title = title
+        self.subtitle = subtitle
+        self.icon = icon
+        self.kind = kind
+    }
+
     enum Kind: Equatable {
         case openFolders
         case openCLIs
         case openTemplates
+        case openSlashCommands
         case pasteImage
         case deleteInput
         case disableTemporary
@@ -316,6 +344,26 @@ struct CmdHoldMenuItem: Identifiable, Equatable {
         case cli(CLIEntry)
         case actionCommand(String)
         case template(CommandTemplate)
+
+        var stableID: String {
+            switch self {
+            case .openFolders:          return "openFolders"
+            case .openCLIs:             return "openCLIs"
+            case .openTemplates:        return "openTemplates"
+            case .openSlashCommands:    return "openSlashCommands"
+            case .pasteImage:           return "pasteImage"
+            case .deleteInput:          return "deleteInput"
+            case .disableTemporary:     return "disableTemporary"
+            case .disablePermanent:     return "disablePermanent"
+            case .addFolder:            return "addFolder"
+            case .addCLI:               return "addCLI"
+            case .addAction(let id):    return "addAction-\(id)"
+            case .folder(let f):        return "folder-\(f.id)"
+            case .cli(let c):           return "cli-\(c.id)"
+            case .actionCommand(let s): return "action-\(s)"
+            case .template(let t):      return "template-\(t.id)"
+            }
+        }
     }
 }
 

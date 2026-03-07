@@ -12,8 +12,24 @@ final class ConfigStore {
     }
 
     func load() -> TermKitConfig? {
-        guard let data = try? Data(contentsOf: configFileURL) else { return nil }
-        return try? decoder.decode(TermKitConfig.self, from: data)
+        let url = configFileURL
+        guard fileManager.fileExists(atPath: url.path) else { return nil }
+        do {
+            let data = try Data(contentsOf: url)
+            return try decoder.decode(TermKitConfig.self, from: data)
+        } catch {
+            print("[TermKit] ⚠️ config decode failed: \(error)")
+            // 备份损坏的配置文件（带时间戳），防止被默认值覆盖后丢失
+            let fmt = DateFormatter()
+            fmt.dateFormat = "yyyyMMdd-HHmmss"
+            let stamp = fmt.string(from: Date())
+            let backupName = "config.backup-\(stamp).json"
+            let backupURL = url.deletingLastPathComponent()
+                .appendingPathComponent(backupName)
+            try? fileManager.copyItem(at: url, to: backupURL)
+            print("[TermKit] 已备份损坏配置到 \(backupName)")
+            return nil
+        }
     }
 
     func save(_ config: TermKitConfig) {

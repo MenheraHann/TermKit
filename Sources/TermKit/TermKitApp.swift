@@ -12,7 +12,7 @@ final class SettingsWindowManager: NSObject, NSWindowDelegate {
         // 已打开则直接置前
         if let w = window, w.isVisible {
             w.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+            if #available(macOS 14.0, *) { NSApp.activate() } else { NSApp.activate(ignoringOtherApps: true) }
             return
         }
 
@@ -24,7 +24,7 @@ final class SettingsWindowManager: NSObject, NSWindowDelegate {
             backing: .buffered,
             defer: false
         )
-        w.title = "TermKit"
+        w.title = L10n.MenuBar.settingsWindowTitle
         w.titleVisibility = .visible
         w.toolbarStyle = .expanded
         w.contentView = NSHostingView(
@@ -34,7 +34,7 @@ final class SettingsWindowManager: NSObject, NSWindowDelegate {
         w.delegate = self
         w.center()
         w.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        if #available(macOS 14.0, *) { NSApp.activate() } else { NSApp.activate(ignoringOtherApps: true) }
 
         self.window = w
     }

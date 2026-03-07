@@ -162,6 +162,11 @@ struct FoldersSettingsView: View {
         panel.allowsMultipleSelection = false
         panel.prompt = L10n.Folders.chooseFolder
         guard panel.runModal() == .OK, let url = panel.url else { return }
+        // 去重：路径已存在则直接选中，不重复添加
+        if let existing = model.config.folders.first(where: { $0.path == url.path }) {
+            selectedID = existing.id
+            return
+        }
         var next = model.config
         let entry = FolderEntry(title: url.lastPathComponent, path: url.path)
         next.folders.append(entry)
@@ -222,11 +227,4 @@ struct FoldersSettingsView: View {
         )
     }
 
-    private func abbreviatePath(_ path: String) -> String {
-        let home = NSHomeDirectory()
-        if path.hasPrefix(home) {
-            return "~" + path.dropFirst(home.count)
-        }
-        return path
-    }
 }

@@ -54,6 +54,8 @@ final class ModifierHoldDetector {
     private var permissionPollTimer: DispatchSourceTimer?
 
     /// 线程安全标志，供后台 C 回调同步读取（决定是否吞掉事件）
+    /// NOTE: 形式上存在 data race（MainActor 写 / 后台线程读），但 Bool 在 ARM64 上
+    /// 读写天然原子。待最低部署目标升级到 macOS 14+ 后可改用 Atomic<Bool>。
     nonisolated(unsafe) var _menuVisible: Bool = false
 
     // MARK: - 菜单可见性（由 Coordinator 调用）
@@ -276,8 +278,8 @@ final class ModifierHoldDetector {
         } else if !isTargetDown && wasTargetDown {
             // 验证物理按键状态：sendClearLine 等模拟按键会产生 flagsChanged，
             // 其 flags 可能不含物理按住的修饰键，导致误判为释放
-            if CGEventSource.keyState(.hidSystemState, key: triggerKey.cgKeyCode) {
-                return  // 目标键仍物理按住，忽略合成事件的假释放
+            if triggerKey.cgKeyCodes.contains(where: { CGEventSource.keyState(.hidSystemState, key: $0) }) {
+                return  // 目标键仍物理按住（左或右），忽略合成事件的假释放
             }
 
             // 目标键释放

@@ -233,7 +233,7 @@ struct CLIDetailView: View {
               fromIdx != targetIdx else { return false }
         var next = model.config
         let item = next.clis[cliIndex].actions.remove(at: fromIdx)
-        let toIdx = targetIdx > fromIdx ? targetIdx : targetIdx
+        let toIdx = targetIdx > fromIdx ? targetIdx - 1 : targetIdx
         next.clis[cliIndex].actions.insert(item, at: min(toIdx, next.clis[cliIndex].actions.count))
         model.saveConfig(next)
         return true

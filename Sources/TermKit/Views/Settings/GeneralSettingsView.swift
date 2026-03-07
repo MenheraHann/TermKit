@@ -122,14 +122,6 @@ struct GeneralSettingsView: View {
         model.saveConfig(next)
     }
 
-    private func abbreviatePath(_ path: String) -> String {
-        let home = NSHomeDirectory()
-        if path.hasPrefix(home) {
-            return "~" + path.dropFirst(home.count)
-        }
-        return path
-    }
-
     /// 通用 Binding 工厂：读取 config 的 keyPath，写入时保存
     private func binding<T>(_ keyPath: WritableKeyPath<TermKitConfig, T>) -> Binding<T> {
         Binding(

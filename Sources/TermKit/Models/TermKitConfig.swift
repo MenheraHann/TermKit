@@ -18,15 +18,18 @@ enum TriggerModifierKey: String, Codable, CaseIterable {
         }
     }
 
-    /// 对应的物理按键 keyCode（用于 CGEventSource.keyState 查询）
-    var cgKeyCode: CGKeyCode {
+    /// 对应的物理按键 keyCode（左侧 + 右侧），用于 CGEventSource.keyState 查询
+    var cgKeyCodes: [CGKeyCode] {
         switch self {
-        case .command:  return 55   // 0x37 Left Command
-        case .option:   return 58   // 0x3A Left Option
-        case .control:  return 59   // 0x3B Left Control
-        case .fn:       return 63   // 0x3F fn/Globe
+        case .command:  return [55, 54]   // 0x37 Left Cmd, 0x36 Right Cmd
+        case .option:   return [58, 61]   // 0x3A Left Opt, 0x3D Right Opt
+        case .control:  return [59, 62]   // 0x3B Left Ctrl, 0x3E Right Ctrl
+        case .fn:       return [63]       // 0x3F fn/Globe（无左右区分）
         }
     }
+
+    /// 保持兼容：返回左侧 keyCode
+    var cgKeyCode: CGKeyCode { cgKeyCodes[0] }
 
     /// 显示名称（用于设置界面）
     var displayName: String {
@@ -49,7 +52,7 @@ struct TermKitConfig: Codable, Equatable {
     var commandTemplates: [CommandTemplate]
     var language: AppLanguage
 
-    static let defaultValue = TermKitConfig(
+    static var defaultValue: TermKitConfig { TermKitConfig(
         version: 1,
         features: Features(enableCmdHoldMenu: false),
         timing: Timing(holdThresholdMs: 300, clipboardRestoreDelayMs: 200),
@@ -58,7 +61,7 @@ struct TermKitConfig: Codable, Equatable {
         imagePaste: ImagePasteConfig(saveDirectory: "Library/Application Support/TermKit/Images"),
         commandTemplates: [],
         language: .zhHans
-    )
+    ) }
 
     // 向后兼容：旧 config.json 没有 commandTemplates / language 字段时使用默认值
     init(
@@ -170,17 +173,17 @@ struct CLIEntry: Codable, Equatable, Identifiable {
             let startCmd = try container.decodeIfPresent(String.self, forKey: .startCommand)
             let startLabel = try container.decodeIfPresent(String.self, forKey: .startLabel)
             if let cmd = startCmd, !cmd.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                migrated.append(CLIAction(title: startLabel ?? "启动", command: cmd))
+                migrated.append(CLIAction(title: startLabel ?? L10n.DefaultCLI.launch, command: cmd))
             }
             let contCmd = try container.decodeIfPresent(String.self, forKey: .continueCommand)
             let contLabel = try container.decodeIfPresent(String.self, forKey: .continueLabel)
             if let cmd = contCmd, !cmd.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                migrated.append(CLIAction(title: contLabel ?? "继续上次", command: cmd))
+                migrated.append(CLIAction(title: contLabel ?? L10n.DefaultCLI.continueLast, command: cmd))
             }
             let resumeCmd = try container.decodeIfPresent(String.self, forKey: .resumeCommand)
             let resumeLabel = try container.decodeIfPresent(String.self, forKey: .resumeLabel)
             if let cmd = resumeCmd, !cmd.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                migrated.append(CLIAction(title: resumeLabel ?? "恢复对话", command: cmd))
+                migrated.append(CLIAction(title: resumeLabel ?? L10n.DefaultCLI.resumeHistory, command: cmd))
             }
             let oldCustom = try container.decodeIfPresent([CLIAction].self, forKey: .customActions) ?? []
             migrated.append(contentsOf: oldCustom)
@@ -197,34 +200,42 @@ struct CLIEntry: Codable, Equatable, Identifiable {
         try container.encodeIfPresent(icon, forKey: .icon)
     }
 
-    static let defaultCLIs: [CLIEntry] = [
-        CLIEntry(name: "Claude Code", actions: [
-            CLIAction(title: "新建对话", command: "claude"),
-            CLIAction(title: "继续上次对话", command: "claude --continue"),
-            CLIAction(title: "恢复历史对话", command: "claude --resume"),
-        ]),
-        CLIEntry(name: "OpenAI Codex", actions: [
-            CLIAction(title: "启动", command: "codex"),
-            CLIAction(title: "Suggest", command: "codex --suggest"),
-            CLIAction(title: "Auto Edit", command: "codex --auto-edit"),
-            CLIAction(title: "Full Auto", command: "codex --full-auto"),
-        ]),
-        CLIEntry(name: "Gemini CLI", actions: [
-            CLIAction(title: "启动", command: "gemini"),
-        ]),
-        CLIEntry(name: "Aider", actions: [
-            CLIAction(title: "启动", command: "aider"),
-            CLIAction(title: "恢复聊天记录", command: "aider --restore-chat-history"),
-        ]),
-        CLIEntry(name: "OpenCode", actions: [
-            CLIAction(title: "启动", command: "opencode"),
-            CLIAction(title: "继续上次", command: "opencode --continue"),
-        ]),
-        CLIEntry(name: "OpenClaw", actions: [
-            CLIAction(title: "Open TUI", command: "openclaw tui"),
-        ]),
-        CLIEntry(name: "GitHub Copilot CLI", actions: []),
-    ]
+    static var defaultCLIs: [CLIEntry] {
+        [
+            CLIEntry(name: "Claude Code", actions: [
+                CLIAction(title: L10n.DefaultCLI.newChat, command: "claude"),
+                CLIAction(title: L10n.DefaultCLI.continueLast, command: "claude --continue"),
+                CLIAction(title: L10n.DefaultCLI.resumeHistory, command: "claude --resume"),
+                CLIAction(title: L10n.DefaultCLI.showVersion, command: "claude --version"),
+                CLIAction(title: L10n.DefaultCLI.showHelp, command: "claude --help"),
+                CLIAction(title: L10n.DefaultCLI.listMCPServers, command: "claude mcp list"),
+                CLIAction(title: L10n.DefaultCLI.checkHealth, command: "claude doctor"),
+                CLIAction(title: L10n.DefaultCLI.checkUpdate, command: "claude update"),
+                CLIAction(title: L10n.DefaultCLI.viewConfig, command: "claude config"),
+            ]),
+            CLIEntry(name: "OpenAI Codex", actions: [
+                CLIAction(title: L10n.DefaultCLI.launch, command: "codex"),
+                CLIAction(title: "Suggest", command: "codex --suggest"),
+                CLIAction(title: "Auto Edit", command: "codex --auto-edit"),
+                CLIAction(title: "Full Auto", command: "codex --full-auto"),
+            ]),
+            CLIEntry(name: "Gemini CLI", actions: [
+                CLIAction(title: L10n.DefaultCLI.launch, command: "gemini"),
+            ]),
+            CLIEntry(name: "Aider", actions: [
+                CLIAction(title: L10n.DefaultCLI.launch, command: "aider"),
+                CLIAction(title: L10n.DefaultCLI.restoreChatHistory, command: "aider --restore-chat-history"),
+            ]),
+            CLIEntry(name: "OpenCode", actions: [
+                CLIAction(title: L10n.DefaultCLI.launch, command: "opencode"),
+                CLIAction(title: L10n.DefaultCLI.continueLast, command: "opencode --continue"),
+            ]),
+            CLIEntry(name: "OpenClaw", actions: [
+                CLIAction(title: "Open TUI", command: "openclaw tui"),
+            ]),
+            CLIEntry(name: "GitHub Copilot CLI", actions: []),
+        ]
+    }
 }
 
 struct CLIAction: Codable, Equatable, Identifiable {
@@ -308,5 +319,14 @@ struct TemplateVariable: Codable, Equatable, Identifiable {
         self.label = label
         self.defaultValue = defaultValue
     }
+}
+
+/// 路径缩略：将 home 目录前缀替换为 ~
+func abbreviatePath(_ path: String) -> String {
+    let home = NSHomeDirectory()
+    if path.hasPrefix(home) {
+        return "~" + path.dropFirst(home.count)
+    }
+    return path
 }
 

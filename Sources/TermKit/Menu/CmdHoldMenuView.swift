@@ -32,6 +32,7 @@ struct CmdHoldMenuView: View {
 
             ForEach(numbered, id: \.element.id) { idx, item in
                 menuRow(item: item, index: idx, isSelected: idx == state.selectedIndex)
+                    .onHover { hovering in if hovering { onSelectIndex(idx) } }
                     .onTapGesture {
                         onSelectIndex(idx)
                         onCommitSelection()
@@ -48,17 +49,17 @@ struct CmdHoldMenuView: View {
                 }
                 let idx = state.numberedItemCount + offset
                 menuRow(item: item, index: idx, isSelected: idx == state.selectedIndex)
+                    .onHover { hovering in if hovering { onSelectIndex(idx) } }
                     .onTapGesture {
                         onSelectIndex(idx)
                         onCommitSelection()
                     }
             }
 
-            Divider()
-                .padding(.horizontal, 6)
-
             // 松开执行预览
             if let hint = state.releaseHint {
+                Divider()
+                    .padding(.horizontal, 6)
                 Text(hint)
                     .font(.system(size: 10, design: .monospaced))
                     .foregroundStyle(.secondary)
@@ -76,7 +77,7 @@ struct CmdHoldMenuView: View {
                 .padding(.vertical, 4)
         }
         .padding(.vertical, 4)
-        .frame(width: 240)
+        .frame(minWidth: 240, maxWidth: 360)
         .background(
             RoundedRectangle(cornerRadius: 6)
                 .fill(.ultraThinMaterial)
@@ -158,7 +159,7 @@ struct CmdHoldMenuView: View {
     /// 判断菜单项是否有子菜单（显示箭头）
     private func hasSubmenu(_ item: CmdHoldMenuItem) -> Bool {
         switch item.kind {
-        case .openFolders, .openCLIs, .openTemplates, .folder, .cli:
+        case .openFolders, .openCLIs, .openTemplates, .openSlashCommands, .folder, .cli:
             return true
         default:
             return false
