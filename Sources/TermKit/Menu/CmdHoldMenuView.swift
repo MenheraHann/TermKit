@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct CmdHoldMenuView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @ObservedObject var state: CmdHoldMenuState
 
     let onSelectIndex: (Int) -> Void
@@ -87,6 +88,10 @@ struct CmdHoldMenuView: View {
         }
         .padding(.vertical, 4)
         .frame(minWidth: 240, maxWidth: 300)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color.black.opacity(colorScheme == .dark ? 0.5 : 0))
+        )
         .background(
             RoundedRectangle(cornerRadius: 6)
                 .fill(.ultraThinMaterial)

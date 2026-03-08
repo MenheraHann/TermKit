@@ -50,6 +50,10 @@ final class CmdHoldMenuWindowController {
         }
         guard let panel, let hostingView else { return }
 
+        // 0. 同步系统外观（LSUIElement + borderless panel 不会自动继承）
+        let isDark = UserDefaults.standard.string(forKey: "AppleInterfaceStyle") == "Dark"
+        panel.appearance = NSAppearance(named: isDark ? .darkAqua : .aqua)
+
         // 1. 直接设置内容（不调 update 避免重复 setFrame）
         hostingView.rootView = CmdHoldMenuView(
             state: state,
