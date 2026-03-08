@@ -49,9 +49,16 @@ final class CmdHoldMenuWindowController {
             createPanel()
         }
         guard let panel, let hostingView else { return }
-        update(state: state)
 
-        // 让面板大小跟随 SwiftUI 内容
+        // 1. 直接设置内容（不调 update 避免重复 setFrame）
+        hostingView.rootView = CmdHoldMenuView(
+            state: state,
+            onSelectIndex: { [weak self] index in self?.onRequestSelectIndex?(index) },
+            onCommitSelection: { [weak self] in self?.onRequestCommitSelection?() }
+        )
+        hostingView.layoutSubtreeIfNeeded()
+
+        // 2. 只读一次 fittingSize，只设一次 frame
         let fittingSize = hostingView.fittingSize
         let panelSize = NSSize(
             width: min(max(fittingSize.width, minMenuWidth), maxMenuWidth),
@@ -64,8 +71,14 @@ final class CmdHoldMenuWindowController {
         let origin = smartPosition(mouse: mouseLocation, size: panelSize)
         panel.setFrame(NSRect(origin: origin, size: panelSize), display: true)
 
-        // 不抢焦点
+        // 3. 先隐形显示，让 material 合成器预热
+        panel.alphaValue = 0
         panel.orderFrontRegardless()
+
+        // 下一个 RunLoop tick 后显示（合成器已完成首帧模糊）
+        DispatchQueue.main.async { [weak panel] in
+            panel?.alphaValue = 1
+        }
     }
 
     func hide() {
