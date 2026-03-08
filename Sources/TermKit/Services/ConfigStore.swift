@@ -18,7 +18,7 @@ final class ConfigStore {
             let data = try Data(contentsOf: url)
             return try decoder.decode(TermKitConfig.self, from: data)
         } catch {
-            print("[TermKit] ⚠️ config decode failed: \(error)")
+            NSLog("[TermKit] config decode failed: %@", error.localizedDescription)
             // 备份损坏的配置文件（带时间戳），防止被默认值覆盖后丢失
             let fmt = DateFormatter()
             fmt.dateFormat = "yyyyMMdd-HHmmss"
@@ -27,7 +27,7 @@ final class ConfigStore {
             let backupURL = url.deletingLastPathComponent()
                 .appendingPathComponent(backupName)
             try? fileManager.copyItem(at: url, to: backupURL)
-            print("[TermKit] 已备份损坏配置到 \(backupName)")
+            NSLog("[TermKit] 已备份损坏配置到 %@", backupName)
             return nil
         }
     }
@@ -38,7 +38,7 @@ final class ConfigStore {
             let data = try encoder.encode(config)
             try data.write(to: configFileURL, options: [.atomic])
         } catch {
-            print("[TermKit] failed to save config: \(error)")
+            NSLog("[TermKit] failed to save config: %@", error.localizedDescription)
         }
     }
 

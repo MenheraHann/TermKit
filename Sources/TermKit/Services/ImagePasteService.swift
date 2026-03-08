@@ -16,7 +16,7 @@ final class ImagePasteService {
         do {
             try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         } catch {
-            print("[TermKit] failed to create image dir: \(error)")
+            NSLog("[TermKit] failed to create image dir: %@", error.localizedDescription)
             return nil
         }
 
@@ -26,7 +26,7 @@ final class ImagePasteService {
             try png.write(to: url, options: [.atomic])
             return url
         } catch {
-            print("[TermKit] failed to write image: \(error)")
+            NSLog("[TermKit] failed to write image: %@", error.localizedDescription)
             return nil
         }
     }

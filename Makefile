@@ -17,7 +17,7 @@ app: build
 	@mkdir -p $(APP_NAME)/Contents/Resources
 	@cp -R Resources/CLIIcons $(APP_NAME)/Contents/Resources/CLIIcons
 	@# Ad-hoc sign so macOS doesn't block it
-	@codesign --force --sign "Apple Development: 8618301155385 (FT6LVTC94L)" $(APP_NAME)
+	@codesign --force --sign - $(APP_NAME)
 	@echo "✅ $(APP_NAME) created."
 
 install: app

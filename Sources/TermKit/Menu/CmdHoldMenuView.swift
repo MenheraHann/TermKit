@@ -21,6 +21,7 @@ struct CmdHoldMenuView: View {
                 .padding(.horizontal, 10)
                 .padding(.top, 6)
                 .padding(.bottom, 4)
+                .accessibilityLabel("Back to \(state.breadcrumb.last ?? "root")")
 
                 Divider()
                     .padding(.horizontal, 6)
@@ -74,6 +75,9 @@ struct CmdHoldMenuView: View {
                 .padding(.horizontal, 10)
                 .padding(.top, 4)
                 .opacity(state.releaseHint != nil ? 1 : 0)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(state.releaseHint ?? "")
+                .accessibilityHidden(state.releaseHint == nil)
 
             Text(L10n.Menu.navigationHint)
                 .font(.system(size: 10))
@@ -147,6 +151,7 @@ struct CmdHoldMenuView: View {
                 .padding(.horizontal, 4)
         )
         .foregroundStyle(isSelected ? .white : .primary)
+        .accessibilityLabel(item.title)
     }
 
     /// 工具项的快捷键提示

@@ -1,7 +1,5 @@
 # App Whitelist Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
-
 **Goal:** Let users customize which apps trigger TermKit's hold-menu, with a settings UI tab for managing the whitelist.
 
 **Architecture:** New `AppEntry` model stored in `TermKitConfig.allowedApps`. `ModifierHoldDetector` reads from a dynamic `Set<String>` synced via `applyConfig`. New SwiftUI tab mirrors FoldersSettingsView pattern.

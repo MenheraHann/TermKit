@@ -1,7 +1,5 @@
 # M2: CGEventTap + Configurable Trigger Key — Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
-
 **Goal:** Replace NSEvent-based modifier detection with CGEventTap, and let users pick which modifier key (⌘/⌥/⌃/fn) triggers the menu.
 
 **Architecture:** A new `TriggerModifierKey` enum maps each option to `CGEventFlags`. `ModifierHoldDetector` (renamed from `CmdHoldDetector`) uses a CGEventTap on a background thread, dispatching to MainActor. Permission check via `AXIsProcessTrusted()` with alert on failure.
@@ -86,7 +84,7 @@ The `defaultValue` already passes `Features(enableCmdHoldMenu: false)` — the n
 
 **Step 4: Build to verify**
 
-Run: `cd /Users/menherahan/Documents/Develop/TermKit && swift build`
+Run: `cd . && swift build`
 Expected: BUILD SUCCEEDED
 
 **Step 5: Commit**
@@ -357,7 +355,7 @@ git rm Sources/TermKit/Input/CmdHoldDetector.swift
 
 **Step 3: Build to verify**
 
-Run: `cd /Users/menherahan/Documents/Develop/TermKit && swift build`
+Run: `cd . && swift build`
 Expected: Build errors in `CmdHoldMenuCoordinator.swift` referencing `CmdHoldDetector` — this is expected, fixed in Task 3.
 
 **Step 4: Commit (WIP)**
@@ -408,7 +406,7 @@ Note: `detector.isEnabled` 赋值必须放在 `triggerKey` 之后，因为 `isEn
 
 **Step 2: Build to verify**
 
-Run: `cd /Users/menherahan/Documents/Develop/TermKit && swift build`
+Run: `cd . && swift build`
 Expected: BUILD SUCCEEDED
 
 **Step 3: Commit**
@@ -460,7 +458,7 @@ Since the trigger key is no longer hardcoded to ⌘.
 
 **Step 3: Build to verify**
 
-Run: `cd /Users/menherahan/Documents/Develop/TermKit && swift build`
+Run: `cd . && swift build`
 Expected: BUILD SUCCEEDED
 
 **Step 4: Commit**
@@ -530,7 +528,7 @@ private func stop() {
 
 **Step 4: Build to verify**
 
-Run: `cd /Users/menherahan/Documents/Develop/TermKit && swift build`
+Run: `cd . && swift build`
 Expected: BUILD SUCCEEDED
 
 **Step 5: Commit**
@@ -549,7 +547,7 @@ git commit -m "fix(input): proper CFRunLoop lifecycle in ModifierHoldDetector st
 **Step 1: Build and run**
 
 ```bash
-cd /Users/menherahan/Documents/Develop/TermKit && make run
+cd . && make run
 ```
 
 Or: `swift run`
