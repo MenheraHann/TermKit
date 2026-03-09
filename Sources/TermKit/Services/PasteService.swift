@@ -52,6 +52,41 @@ final class PasteService {
         ctrlUp2?.post(tap: .cghidEventTap)
     }
 
+    /// 模拟 Cmd+C 读取终端中选中的文字，完成后恢复剪贴板
+    func readSelectedText(completion: @escaping (String?) -> Void) {
+        let pasteboard = NSPasteboard.general
+        let snapshot = PasteboardSnapshot.capture(from: pasteboard)
+
+        pasteboard.clearContents()
+
+        // 模拟 Cmd+C 复制选中文字
+        sendCopy()
+
+        // 等待 50ms 让终端处理复制
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(50)) {
+            let text = pasteboard.string(forType: .string)
+            snapshot.restore(to: pasteboard)
+            completion(text)
+        }
+    }
+
+    /// 模拟 Cmd+C
+    private func sendCopy() {
+        let src = CGEventSource(stateID: .combinedSessionState)
+        let cKey: CGKeyCode = 8
+        let cmdDown = CGEvent(keyboardEventSource: src, virtualKey: 0x37, keyDown: true)
+        let cDown = CGEvent(keyboardEventSource: src, virtualKey: cKey, keyDown: true)
+        let cUp = CGEvent(keyboardEventSource: src, virtualKey: cKey, keyDown: false)
+        let cmdUp = CGEvent(keyboardEventSource: src, virtualKey: 0x37, keyDown: false)
+
+        cmdDown?.post(tap: .cghidEventTap)
+        cDown?.flags = .maskCommand
+        cDown?.post(tap: .cghidEventTap)
+        cUp?.flags = .maskCommand
+        cUp?.post(tap: .cghidEventTap)
+        cmdUp?.post(tap: .cghidEventTap)
+    }
+
     func sendPaste() {
         let src = CGEventSource(stateID: .combinedSessionState)
         let vKey: CGKeyCode = 9

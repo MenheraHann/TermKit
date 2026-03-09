@@ -164,6 +164,7 @@ struct CmdHoldMenuView: View {
         switch item.kind {
         case .pasteImage:         return "V"
         case .deleteInput:        return "⌫"
+        case .openSelection:      return "L"
         case .disableTemporary:   return "-"
         case .disablePermanent:   return "="
         default:                  return nil

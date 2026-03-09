@@ -38,6 +38,8 @@ final class ModifierHoldDetector {
     var onDisableTemporary: (() -> Void)?
     /// 关闭快捷键回调（= 键）
     var onDisablePermanent: (() -> Void)?
+    /// L 键打开选中路径回调
+    var onOpenSelection: (() -> Void)?
 
     // MARK: - 私有状态
 
@@ -252,6 +254,8 @@ final class ModifierHoldDetector {
             onDisableTemporary?()
         case 24: // =（关闭快捷键）
             onDisablePermanent?()
+        case 37: // L（打开选中路径）
+            onOpenSelection?()
         default:
             break
         }
@@ -453,6 +457,7 @@ private let kMenuKeyCodes: Set<UInt16> = [
     9,    // V
     27,   // -（关闭快捷键 1h）
     24,   // =（关闭快捷键）
+    37,   // L（打开选中路径）
 ]
 
 // MARK: - C 回调函数

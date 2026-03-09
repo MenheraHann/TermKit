@@ -32,6 +32,7 @@ final class CmdHoldMenuCoordinator: ObservableObject {
         detector.onPaste = { [weak self] in self?.handleSmartPaste() }
         detector.onDisableTemporary = { [weak self] in self?.disableForOneHour() }
         detector.onDisablePermanent = { [weak self] in self?.disablePermanently() }
+        detector.onOpenSelection = { [weak self] in self?.handleOpenSelection() }
         detector.onNumberKeySelect = { [weak self] index in
             guard let self, index < self.state.numberedItemCount else { return }
             self.state.select(index: index)
@@ -121,6 +122,42 @@ final class CmdHoldMenuCoordinator: ObservableObject {
         hide()
     }
 
+    /// L 键：读取选中文字，解析为路径并用 Finder/默认应用打开
+    private func handleOpenSelection() {
+        hide()
+        paster.readSelectedText { [weak self] text in
+            guard self != nil else { return }
+            guard let raw = text, !raw.isEmpty else { return }
+
+            var path = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            // 去除包裹的引号
+            if (path.hasPrefix("\"") && path.hasSuffix("\""))
+                || (path.hasPrefix("'") && path.hasSuffix("'")) {
+                path = String(path.dropFirst().dropLast())
+            }
+
+            // 处理 file:line:column 格式（去掉 :行号:列号 后缀）
+            // 匹配模式：路径部分至少 2 字符，后面跟 :数字 一到两组
+            if let range = path.range(of: #":\d+(?::\d+)?$"#, options: .regularExpression) {
+                path = String(path[path.startIndex..<range.lowerBound])
+            }
+
+            // 展开 ~ 为用户主目录
+            if path.hasPrefix("~") {
+                path = (path as NSString).expandingTildeInPath
+            }
+
+            // 注意：相对路径基于 app 进程 cwd，非终端 cwd，建议选中绝对路径使用
+            guard FileManager.default.fileExists(atPath: path) else {
+                NSSound.beep()
+                return
+            }
+
+            NSWorkspace.shared.open(URL(fileURLWithPath: path))
+        }
+    }
+
     private func confirm() {
         detector.menuDidHide()
         let action = state.currentAction
@@ -135,6 +172,9 @@ final class CmdHoldMenuCoordinator: ObservableObject {
         case .deleteInput:
             paster.sendClearLine()
             hide()
+        case .openSelection:
+            handleOpenSelection()
+            return
         case .showAddFolder:
             hide()
             window.presentAddFolder { [weak self] path in

@@ -15,7 +15,7 @@ final class CmdHoldMenuState: ObservableObject {
         if level == .root {
             return currentItems.filter { item in
                 switch item.kind {
-                case .pasteImage, .deleteInput, .disableTemporary, .disablePermanent: return false
+                case .pasteImage, .deleteInput, .openSelection, .disableTemporary, .disablePermanent: return false
                 default: return true
                 }
             }.count
@@ -37,6 +37,7 @@ final class CmdHoldMenuState: ObservableObject {
             items.append(contentsOf: [
                 CmdHoldMenuItem(title: L10n.Menu.paste, icon: "doc.on.clipboard", kind: .pasteImage),
                 CmdHoldMenuItem(title: L10n.Menu.clearInput, icon: "delete.left", kind: .deleteInput),
+                CmdHoldMenuItem(title: L10n.Menu.openSelection, icon: "link", kind: .openSelection),
                 CmdHoldMenuItem(title: L10n.Menu.disableTemporary, icon: "zzz", kind: .disableTemporary),
                 CmdHoldMenuItem(title: L10n.Menu.disablePermanent, icon: "switch.2", kind: .disablePermanent),
             ])
@@ -88,6 +89,8 @@ final class CmdHoldMenuState: ObservableObject {
             return L10n.Menu.hintPasteClipboard
         case .deleteInput:
             return L10n.Menu.hintClearInput
+        case .openSelection:
+            return L10n.Menu.hintOpenSelection
         case .pasteTemplate(let tmpl):
             let hasUnresolved = tmpl.variables.contains { $0.defaultValue.isEmpty }
             if hasUnresolved {
@@ -118,6 +121,8 @@ final class CmdHoldMenuState: ObservableObject {
             return .pasteImagePath
         case .deleteInput:
             return .deleteInput
+        case .openSelection:
+            return .openSelection
         case .disableTemporary:
             return .disableTemporary
         case .disablePermanent:
@@ -198,7 +203,7 @@ final class CmdHoldMenuState: ObservableObject {
             level = .slashCommands
             breadcrumb = ["TermKit", L10n.Menu.slashCommands]
             selectedIndex = -1
-        case .pasteImage, .deleteInput, .disableTemporary, .disablePermanent, .addFolder, .addCLI, .addAction, .actionCommand, .template:
+        case .pasteImage, .deleteInput, .openSelection, .disableTemporary, .disablePermanent, .addFolder, .addCLI, .addAction, .actionCommand, .template:
             break
         }
     }
@@ -335,6 +340,7 @@ struct CmdHoldMenuItem: Identifiable, Equatable {
         case openSlashCommands
         case pasteImage
         case deleteInput
+        case openSelection
         case disableTemporary
         case disablePermanent
         case addFolder
@@ -353,6 +359,7 @@ struct CmdHoldMenuItem: Identifiable, Equatable {
             case .openSlashCommands:    return "openSlashCommands"
             case .pasteImage:           return "pasteImage"
             case .deleteInput:          return "deleteInput"
+            case .openSelection:        return "openSelection"
             case .disableTemporary:     return "disableTemporary"
             case .disablePermanent:     return "disablePermanent"
             case .addFolder:            return "addFolder"
@@ -371,6 +378,7 @@ enum CmdHoldMenuConfirmedAction: Equatable {
     case pasteText(String)
     case pasteImagePath
     case deleteInput
+    case openSelection
     case disableTemporary
     case disablePermanent
     case pasteTemplate(CommandTemplate)

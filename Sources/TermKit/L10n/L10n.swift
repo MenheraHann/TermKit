@@ -1115,6 +1115,20 @@ enum L10n {
             }
         }
 
+        static var openSelection: String {
+            switch L10n.current {
+            case .zhHans: return "打开选中路径"
+            case .zhHant: return "打開選取路徑"
+            case .en:     return "Open Selection"
+            case .ja:     return "選択パスを開く"
+            case .ko:     return "선택 경로 열기"
+            case .es:     return "Abrir selección"
+            case .fr:     return "Ouvrir la sélection"
+            case .de:     return "Auswahl öffnen"
+            case .pt:     return "Abrir seleção"
+            }
+        }
+
         static var disableTemporary: String {
             switch L10n.current {
             case .zhHans: return "关闭快捷键 1h"
@@ -1210,6 +1224,20 @@ enum L10n {
             case .fr:     return "⏎ Effacer la saisie"
             case .de:     return "⏎ Eingabe löschen"
             case .pt:     return "⏎ Limpar entrada"
+            }
+        }
+
+        static var hintOpenSelection: String {
+            switch L10n.current {
+            case .zhHans: return "⏎ 打开选中路径"
+            case .zhHant: return "⏎ 打開選取路徑"
+            case .en:     return "⏎ Open selection"
+            case .ja:     return "⏎ 選択パスを開く"
+            case .ko:     return "⏎ 선택 경로 열기"
+            case .es:     return "⏎ Abrir selección"
+            case .fr:     return "⏎ Ouvrir la sélection"
+            case .de:     return "⏎ Auswahl öffnen"
+            case .pt:     return "⏎ Abrir seleção"
             }
         }
 
