@@ -36,43 +36,43 @@
 ```
 cd '/Users/you/Projects/MyApp' && claude --resume
 ```
-<img src="assets/打开文件演示.gif" alt="Open File Demo" width="100%" />
+<img src="assets/打开文件演示.gif" alt="Open File Demo" width="60%" />
 
 开箱即有 Claude Code、Gemini CLI、OpenAI Codex、OpenCode、OpenClaw、GitHub Copilot CLI 的预置配置，每个 CLI 的常用操作都已预设好，也可以随意增删改。
 
-<img src="assets/演示cli启动.gif" alt="CLI Launch Demo" width="100%" />
+<img src="assets/演示cli启动.gif" alt="CLI Launch Demo" width="60%" />
 
-<img src="assets/查看CLI的所有命令.gif" alt="CLI Commands" width="100%" />
+<img src="assets/查看CLI的所有命令.gif" alt="CLI Commands" width="60%" />
 
 ### Folder Shortcuts
 
 添加常用项目目录，快速 `cd` 进入。
 
-<img src="assets/添加文件界面.png" alt="Add Folder" width="100%" />
+<img src="assets/添加文件界面.png" alt="Add Folder" width="60%" />
 
 ### Slash Commands
 
 内置交互式命令（`/clear`、`/exit`、`/compact` 等），菜单中直接选择粘贴。
 
-<img src="assets/交互式命令演示.gif" alt="Slash Commands Demo" width="100%" />
+<img src="assets/交互式命令演示.gif" alt="Slash Commands Demo" width="60%" />
 
 ### Smart Paste
 
 剪贴板有文字 → 直接粘贴；有图片 → 自动保存到本地并粘贴路径，方便喂给 AI 读取。
 
-<img src="assets/截图快速粘贴.gif" alt="Smart Paste Demo" width="100%" />
+<img src="assets/截图快速粘贴.gif" alt="Smart Paste Demo" width="60%" />
 
 ### Open Selected Path
 
 选中终端里的文件路径 → 弹出菜单按 `L` → 直接用 Finder 或默认应用打开。支持带引号路径、`~/` 展开、`file:line:col` 格式。
 
-<img src="assets/打开链接快捷方式.gif" alt="Open Link Shortcut" width="100%" />
+<img src="assets/打开链接快捷方式.gif" alt="Open Link Shortcut" width="60%" />
 
 ### Clear Line Input
 
 弹出菜单按 `Delete`，一键清空当前行输入。连续点击可快速删除多行。
 
-<img src="assets/清楚此行输入功能.gif" alt="Clear Line Demo" width="100%" />
+<img src="assets/清楚此行输入功能.gif" alt="Clear Line Demo" width="60%" />
 
 ### Clipboard Protection
 
@@ -82,7 +82,7 @@ cd '/Users/you/Projects/MyApp' && claude --resume
 
 只在指定 app（终端、编辑器）前台时触发，其他应用完全不受影响。
 
-<img src="assets/应用白名单.png" alt="App Whitelist" width="100%" />
+<img src="assets/应用白名单.png" alt="App Whitelist" width="60%" />
 
 ---
 
@@ -130,7 +130,7 @@ make uninstall
 
 点击菜单栏图标 → 配置：
 
-<img src="assets/设置演示.png" alt="Settings" width="100%" />
+<img src="assets/设置演示.png" alt="Settings" width="60%" />
 
 | Tab | Description |
 |-----|-------------|
