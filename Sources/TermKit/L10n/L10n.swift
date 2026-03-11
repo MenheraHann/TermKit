@@ -1552,6 +1552,19 @@ enum L10n {
             case .pt:     return "Limpar histórico"
             }
         }
+        static var exit: String {
+            switch L10n.current {
+            case .zhHans: return "退出对话"
+            case .zhHant: return "退出對話"
+            case .en:     return "Exit"
+            case .ja:     return "終了"
+            case .ko:     return "종료"
+            case .es:     return "Salir"
+            case .fr:     return "Quitter"
+            case .de:     return "Beenden"
+            case .pt:     return "Sair"
+            }
+        }
         static var compact: String {
             switch L10n.current {
             case .zhHans: return "压缩对话"

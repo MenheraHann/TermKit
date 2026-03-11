@@ -62,7 +62,7 @@ struct GeneralSettingsView: View {
                         Text("\(model.config.timing.holdThresholdMs) ms")
                             .monospacedDigit()
                             .foregroundStyle(.secondary)
-                        Stepper("", value: binding(\.timing.holdThresholdMs), in: 150...800, step: 50)
+                        Stepper("", value: binding(\.timing.holdThresholdMs), in: 0...500, step: 100)
                             .labelsHidden()
                     }
                 }

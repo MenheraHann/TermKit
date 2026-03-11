@@ -68,6 +68,7 @@ final class CmdHoldMenuState: ObservableObject {
         case .slashCommands:
             return [
                 CmdHoldMenuItem(title: L10n.SlashCommand.clear, subtitle: "/clear", icon: nil, kind: .actionCommand("/clear")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.exit, subtitle: "/exit", icon: nil, kind: .actionCommand("/exit")),
                 CmdHoldMenuItem(title: L10n.SlashCommand.compact, subtitle: "/compact", icon: nil, kind: .actionCommand("/compact")),
                 CmdHoldMenuItem(title: L10n.SlashCommand.model, subtitle: "/model", icon: nil, kind: .actionCommand("/model")),
                 CmdHoldMenuItem(title: L10n.SlashCommand.config, subtitle: "/config", icon: nil, kind: .actionCommand("/config")),

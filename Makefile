@@ -15,6 +15,7 @@ app: build
 	@chmod 755 $(APP_NAME)/Contents/MacOS/TermKit
 	@cp Resources/Info.plist $(APP_NAME)/Contents/Info.plist
 	@mkdir -p $(APP_NAME)/Contents/Resources
+	@cp Resources/AppIcon.icns $(APP_NAME)/Contents/Resources/AppIcon.icns
 	@cp -R Resources/CLIIcons $(APP_NAME)/Contents/Resources/CLIIcons
 	@# Ad-hoc sign so macOS doesn't block it
 	@codesign --force --sign - $(APP_NAME)

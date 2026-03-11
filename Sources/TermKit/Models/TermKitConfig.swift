@@ -56,7 +56,7 @@ struct TermKitConfig: Codable, Equatable {
     static var defaultValue: TermKitConfig { TermKitConfig(
         version: 1,
         features: Features(enableCmdHoldMenu: false),
-        timing: Timing(holdThresholdMs: 300, clipboardRestoreDelayMs: 200),
+        timing: Timing(holdThresholdMs: 0, clipboardRestoreDelayMs: 200),
         folders: [],
         clis: CLIEntry.defaultCLIs,
         imagePaste: ImagePasteConfig(saveDirectory: "Library/Application Support/TermKit/Images"),
@@ -249,25 +249,37 @@ struct CLIEntry: Codable, Equatable, Identifiable {
             ], icon: "custom:claude"),
             CLIEntry(name: "OpenAI Codex", actions: [
                 CLIAction(title: L10n.DefaultCLI.launch, command: "codex"),
+                CLIAction(title: L10n.DefaultCLI.resumeHistory, command: "codex --resume"),
                 CLIAction(title: "Suggest", command: "codex --suggest"),
                 CLIAction(title: "Auto Edit", command: "codex --auto-edit"),
                 CLIAction(title: "Full Auto", command: "codex --full-auto"),
+                CLIAction(title: L10n.DefaultCLI.showVersion, command: "codex --version"),
             ], icon: "custom:openai"),
             CLIEntry(name: "Gemini CLI", actions: [
                 CLIAction(title: L10n.DefaultCLI.launch, command: "gemini"),
+                CLIAction(title: L10n.DefaultCLI.resumeHistory, command: "gemini --resume"),
+                CLIAction(title: L10n.DefaultCLI.showVersion, command: "gemini --version"),
+                CLIAction(title: L10n.DefaultCLI.showHelp, command: "gemini --help"),
             ], icon: "custom:gemini"),
-            CLIEntry(name: "Aider", actions: [
-                CLIAction(title: L10n.DefaultCLI.launch, command: "aider"),
-                CLIAction(title: L10n.DefaultCLI.restoreChatHistory, command: "aider --restore-chat-history"),
-            ]),
             CLIEntry(name: "OpenCode", actions: [
                 CLIAction(title: L10n.DefaultCLI.launch, command: "opencode"),
                 CLIAction(title: L10n.DefaultCLI.continueLast, command: "opencode --continue"),
+                CLIAction(title: "Init", command: "opencode init"),
+                CLIAction(title: L10n.DefaultCLI.showVersion, command: "opencode --version"),
+                CLIAction(title: L10n.DefaultCLI.showHelp, command: "opencode --help"),
             ], icon: "custom:opencode-logo-light"),
             CLIEntry(name: "OpenClaw", actions: [
                 CLIAction(title: "Open TUI", command: "openclaw tui"),
+                CLIAction(title: "Setup", command: "openclaw setup"),
+                CLIAction(title: "Status", command: "openclaw status"),
+                CLIAction(title: "Sessions", command: "openclaw sessions"),
+                CLIAction(title: L10n.DefaultCLI.checkHealth, command: "openclaw doctor"),
+                CLIAction(title: L10n.DefaultCLI.checkUpdate, command: "openclaw update"),
             ], icon: "custom:openclaw"),
-            CLIEntry(name: "GitHub Copilot CLI", actions: [], icon: "custom:githubcopilot"),
+            CLIEntry(name: "GitHub Copilot CLI", actions: [
+                CLIAction(title: "Suggest", command: "gh copilot suggest"),
+                CLIAction(title: "Explain", command: "gh copilot explain"),
+            ], icon: "custom:githubcopilot"),
         ]
     }
 }
