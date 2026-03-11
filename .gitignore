@@ -8,3 +8,5 @@ TermKit.app/
 .claude/
 Resources/CLIIcons_backup/
 *.dSYM
+.vscode/
+CLI-Reference.md
