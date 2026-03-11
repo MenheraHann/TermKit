@@ -5,7 +5,7 @@
 <p align="center">
   <b>A command palette for your AI CLI workflow on macOS.</b><br/>
   长按 ⌘ → 弹出分层菜单 → 选择 → 松开 ⌘ → 命令粘贴到终端<br/>
-  🌍 支持 9 种语言 · Supports 9 languages
+  🌍 简体中文 · English · 日本語 · 한국어 · Français · Deutsch · Español · Português · Italiano
 </p>
 
 <p align="center">

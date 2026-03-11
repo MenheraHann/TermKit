@@ -5,7 +5,7 @@
 <p align="center">
   <b>A command palette for your AI CLI workflow on macOS.</b><br/>
   Hold ⌘ → Menu appears → Select → Release ⌘ → Command pasted to terminal<br/>
-  🌍 Supports 9 languages · 支持 9 种语言
+  🌍 简体中文 · English · 日本語 · 한국어 · Français · Deutsch · Español · Português · Italiano
 </p>
 
 <p align="center">
