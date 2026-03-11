@@ -106,6 +106,14 @@ cd '/Users/you/Projects/MyApp' && claude --resume
 
 ## Installation
 
+### Download DMG
+
+直接下载安装包，拖入 Applications 即可使用：
+
+[百度网盘下载](https://pan.baidu.com/s/1WT3Q1UcDlOWI1VpmJefdfw?pwd=1jtv)（提取码：1jtv）
+
+### Build from Source
+
 ```bash
 git clone https://github.com/MenheraHann/TermKit.git
 cd TermKit
