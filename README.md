@@ -27,6 +27,36 @@
 
 ---
 
+## Installation
+
+### Download DMG
+
+直接下载安装包，拖入 Applications 即可使用：
+
+[百度网盘下载](https://pan.baidu.com/s/1WT3Q1UcDlOWI1VpmJefdfw?pwd=1jtv)（提取码：1jtv）
+
+### Build from Source
+
+```bash
+git clone https://github.com/MenheraHann/TermKit.git
+cd TermKit
+make install
+```
+
+编译后自动安装到 `/Applications` 并启动。
+
+```bash
+# Uninstall
+make uninstall
+```
+
+**Requirements:**
+- macOS 13.0 (Ventura) or later
+- Xcode Command Line Tools (Swift 5.9+)
+- Accessibility + Input Monitoring permissions
+
+---
+
 ## Features
 
 ### Hierarchical Menu & CLI Launcher
@@ -101,36 +131,6 @@ cd '/Users/you/Projects/MyApp' && claude --resume
 | `=` | 永久关闭快捷键 |
 | `Esc` | 取消 |
 | 释放 ⌘ | 确认执行 |
-
----
-
-## Installation
-
-### Download DMG
-
-直接下载安装包，拖入 Applications 即可使用：
-
-[百度网盘下载](https://pan.baidu.com/s/1WT3Q1UcDlOWI1VpmJefdfw?pwd=1jtv)（提取码：1jtv）
-
-### Build from Source
-
-```bash
-git clone https://github.com/MenheraHann/TermKit.git
-cd TermKit
-make install
-```
-
-编译后自动安装到 `/Applications` 并启动。
-
-```bash
-# Uninstall
-make uninstall
-```
-
-**Requirements:**
-- macOS 13.0 (Ventura) or later
-- Xcode Command Line Tools (Swift 5.9+)
-- Accessibility + Input Monitoring permissions
 
 ---
 
