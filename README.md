@@ -36,10 +36,11 @@
 ```
 cd '/Users/you/Projects/MyApp' && claude --resume
 ```
-
-<img src="assets/演示cli启动.gif" alt="CLI Launch Demo" width="100%" />
+<img src="assets/打开文件演示.gif" alt="Open File Demo" width="100%" />
 
 开箱即有 Claude Code、Gemini CLI、OpenAI Codex、OpenCode、OpenClaw、GitHub Copilot CLI 的预置配置，每个 CLI 的常用操作都已预设好，也可以随意增删改。
+
+<img src="assets/演示cli启动.gif" alt="CLI Launch Demo" width="100%" />
 
 <img src="assets/查看CLI的所有命令.gif" alt="CLI Commands" width="100%" />
 
@@ -64,8 +65,6 @@ cd '/Users/you/Projects/MyApp' && claude --resume
 ### Open Selected Path
 
 选中终端里的文件路径 → 弹出菜单按 `L` → 直接用 Finder 或默认应用打开。支持带引号路径、`~/` 展开、`file:line:col` 格式。
-
-<img src="assets/打开文件演示.gif" alt="Open File Demo" width="100%" />
 
 <img src="assets/打开链接快捷方式.gif" alt="Open Link Shortcut" width="100%" />
 
