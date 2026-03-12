@@ -127,9 +127,28 @@ final class CmdHoldMenuCoordinator: ObservableObject {
         hide()
         paster.readSelectedText { [weak self] text in
             guard self != nil else { return }
-            guard let raw = text, !raw.isEmpty else { return }
+            guard let raw = text, !raw.isEmpty else {
+                NSSound.beep()
+                return
+            }
+
+            NSLog("[TermKit] [OpenSel] 原始文本 (%d 字符): %@", raw.count, String(raw.prefix(200)))
 
             var path = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            // 清理 ANSI 转义码（终端复制的文本可能包含颜色/格式代码）
+            path = path.replacingOccurrences(
+                of: #"\x1B\[[0-9;]*[A-Za-z]"#,
+                with: "",
+                options: .regularExpression
+            )
+            // 移除终端换行及其后的缩进空格（终端自动换行会把路径拆断）
+            path = path.replacingOccurrences(
+                of: #"\r?\n\s*"#,
+                with: "",
+                options: .regularExpression
+            )
+            NSLog("[TermKit] [OpenSel] 清理后路径: %@", path)
 
             // 去除包裹的引号
             if (path.hasPrefix("\"") && path.hasSuffix("\""))
@@ -149,7 +168,9 @@ final class CmdHoldMenuCoordinator: ObservableObject {
             }
 
             // 注意：相对路径基于 app 进程 cwd，非终端 cwd，建议选中绝对路径使用
-            guard FileManager.default.fileExists(atPath: path) else {
+            let exists = FileManager.default.fileExists(atPath: path)
+            NSLog("[TermKit] [OpenSel] fileExists(%@) = %@", path, exists ? "true" : "false")
+            guard exists else {
                 NSSound.beep()
                 return
             }
