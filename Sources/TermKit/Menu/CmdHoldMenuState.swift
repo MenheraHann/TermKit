@@ -43,7 +43,14 @@ final class CmdHoldMenuState: ObservableObject {
             ])
             return items
         case .folders:
-            var items = config.folders.map { folder in
+            let sorted: [FolderEntry]
+            switch config.folderSortOrder {
+            case .newestFirst: sorted = config.folders.sorted { $0.createdAt > $1.createdAt }
+            case .oldestFirst: sorted = config.folders.sorted { $0.createdAt < $1.createdAt }
+            case .titleAZ:     sorted = config.folders.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+            case .titleZA:     sorted = config.folders.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedDescending }
+            }
+            var items = sorted.map { folder in
                 CmdHoldMenuItem(title: folder.title, subtitle: folder.path, icon: folder.icon ?? "folder.fill", kind: .folder(folder))
             }
             items.append(CmdHoldMenuItem(title: L10n.Menu.addFolderEllipsis, icon: "plus.circle", kind: .addFolder))

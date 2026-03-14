@@ -205,6 +205,7 @@ final class CmdHoldMenuCoordinator: ObservableObject {
                 next.folders.append(FolderEntry(title: URL(fileURLWithPath: expanded).lastPathComponent, path: expanded))
                 self.configStore.save(next)
                 self.applyConfig(next)
+                self.onConfigDidChange?(next)
             }
         case .showAddCLI:
             hide()
@@ -214,6 +215,7 @@ final class CmdHoldMenuCoordinator: ObservableObject {
                 next.clis.append(entry)
                 self.configStore.save(next)
                 self.applyConfig(next)
+                self.onConfigDidChange?(next)
             }
         case .pasteTemplate(let tmpl):
             // 检查是否有未填充的变量（无默认值）
@@ -236,6 +238,7 @@ final class CmdHoldMenuCoordinator: ObservableObject {
                 next.clis[idx].actions.append(CLIAction(title: title, command: command))
                 self.configStore.save(next)
                 self.applyConfig(next)
+                self.onConfigDidChange?(next)
             }
         case .disableTemporary:
             disableForOneHour()

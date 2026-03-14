@@ -42,6 +42,24 @@ enum TriggerModifierKey: String, Codable, CaseIterable {
     }
 }
 
+/// 文件夹排序方式
+enum FolderSortOrder: String, Codable, CaseIterable {
+    case newestFirst   // 时间从新到旧
+    case oldestFirst   // 时间从旧到新（当前默认）
+    case titleAZ       // A → Z
+    case titleZA       // Z → A
+
+    /// 显示名称（用于设置界面）
+    var displayName: String {
+        switch self {
+        case .newestFirst: return L10n.Folders.newestFirst
+        case .oldestFirst: return L10n.Folders.oldestFirst
+        case .titleAZ:     return L10n.Folders.titleAZ
+        case .titleZA:     return L10n.Folders.titleZA
+        }
+    }
+}
+
 struct TermKitConfig: Codable, Equatable {
     var version: Int
     var features: Features
@@ -52,6 +70,7 @@ struct TermKitConfig: Codable, Equatable {
     var commandTemplates: [CommandTemplate]
     var language: AppLanguage
     var allowedApps: [AppEntry]
+    var folderSortOrder: FolderSortOrder
 
     static var defaultValue: TermKitConfig { TermKitConfig(
         version: 1,
@@ -62,7 +81,8 @@ struct TermKitConfig: Codable, Equatable {
         imagePaste: ImagePasteConfig(saveDirectory: "Library/Application Support/TermKit/Images"),
         commandTemplates: [],
         language: .zhHans,
-        allowedApps: AppEntry.defaultApps
+        allowedApps: AppEntry.defaultApps,
+        folderSortOrder: .oldestFirst
     ) }
 
     // 向后兼容：旧 config.json 没有 commandTemplates / language 字段时使用默认值
@@ -75,7 +95,8 @@ struct TermKitConfig: Codable, Equatable {
         imagePaste: ImagePasteConfig,
         commandTemplates: [CommandTemplate] = [],
         language: AppLanguage = .zhHans,
-        allowedApps: [AppEntry] = AppEntry.defaultApps
+        allowedApps: [AppEntry] = AppEntry.defaultApps,
+        folderSortOrder: FolderSortOrder = .oldestFirst
     ) {
         self.version = version
         self.features = features
@@ -86,6 +107,7 @@ struct TermKitConfig: Codable, Equatable {
         self.commandTemplates = commandTemplates
         self.language = language
         self.allowedApps = allowedApps
+        self.folderSortOrder = folderSortOrder
     }
 
     init(from decoder: Decoder) throws {
@@ -99,6 +121,7 @@ struct TermKitConfig: Codable, Equatable {
         commandTemplates = try container.decodeIfPresent([CommandTemplate].self, forKey: .commandTemplates) ?? []
         language = try container.decodeIfPresent(AppLanguage.self, forKey: .language) ?? .zhHans
         allowedApps = try container.decodeIfPresent([AppEntry].self, forKey: .allowedApps) ?? AppEntry.defaultApps
+        folderSortOrder = try container.decodeIfPresent(FolderSortOrder.self, forKey: .folderSortOrder) ?? .oldestFirst
     }
 
     struct Features: Codable, Equatable {
@@ -129,12 +152,24 @@ struct FolderEntry: Codable, Equatable, Identifiable {
     var title: String
     var path: String
     var icon: String?
+    var createdAt: Date
 
-    init(id: UUID = UUID(), title: String, path: String, icon: String? = nil) {
+    init(id: UUID = UUID(), title: String, path: String, icon: String? = nil, createdAt: Date = Date()) {
         self.id = id
         self.title = title
         self.path = path
         self.icon = icon
+        self.createdAt = createdAt
+    }
+
+    // 向后兼容：旧 JSON 没有 createdAt 字段时用当前时间兜底
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        title = try container.decode(String.self, forKey: .title)
+        path = try container.decode(String.self, forKey: .path)
+        icon = try container.decodeIfPresent(String.self, forKey: .icon)
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
     }
 }
 

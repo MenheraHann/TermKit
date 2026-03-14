@@ -58,6 +58,14 @@ struct FoldersSettingsView: View {
                     .help(L10n.Common.removeSelected)
 
                     Spacer()
+
+                    Picker("", selection: sortOrderBinding) {
+                        ForEach(FolderSortOrder.allCases, id: \.self) { order in
+                            Text(order.displayName).tag(order)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .frame(width: 120)
                 }
                 .buttonStyle(.borderless)
                 .padding(.horizontal, 10)
@@ -195,6 +203,17 @@ struct FoldersSettingsView: View {
             next.folders[idx].title = url.lastPathComponent
         }
         model.saveConfig(next)
+    }
+
+    private var sortOrderBinding: Binding<FolderSortOrder> {
+        Binding(
+            get: { model.config.folderSortOrder },
+            set: { value in
+                var next = model.config
+                next.folderSortOrder = value
+                model.saveConfig(next)
+            }
+        )
     }
 
     private func bindingForIcon(at idx: Int) -> Binding<String?> {

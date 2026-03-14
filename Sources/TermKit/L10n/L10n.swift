@@ -427,6 +427,38 @@ enum L10n {
             }
         }
 
+        static var newestFirst: String {
+            switch L10n.current {
+            case .zhHans: return "最新添加"
+            case .zhHant: return "最新新增"
+            case .en:     return "Newest First"
+            case .ja:     return "新しい順"
+            case .ko:     return "최신순"
+            case .es:     return "Más recientes"
+            case .fr:     return "Plus récents"
+            case .de:     return "Neueste zuerst"
+            case .pt:     return "Mais recentes"
+            }
+        }
+
+        static var oldestFirst: String {
+            switch L10n.current {
+            case .zhHans: return "最早添加"
+            case .zhHant: return "最早新增"
+            case .en:     return "Oldest First"
+            case .ja:     return "古い順"
+            case .ko:     return "오래된순"
+            case .es:     return "Más antiguos"
+            case .fr:     return "Plus anciens"
+            case .de:     return "Älteste zuerst"
+            case .pt:     return "Mais antigos"
+            }
+        }
+
+        static var titleAZ: String { "A → Z" }
+
+        static var titleZA: String { "Z → A" }
+
         static var changePath: String {
             switch L10n.current {
             case .zhHans: return "修改路径"
