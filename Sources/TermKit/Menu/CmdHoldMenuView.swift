@@ -80,6 +80,13 @@ struct CmdHoldMenuView: View {
                 .accessibilityLabel(state.releaseHint ?? "")
                 .accessibilityHidden(state.releaseHint == nil)
 
+            if state.totalPages > 1 {
+                Text(L10n.Menu.pageIndicator(state.currentPage + 1, state.totalPages))
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
+
             Text(L10n.Menu.navigationHint)
                 .font(.system(size: 10))
                 .foregroundStyle(.tertiary)

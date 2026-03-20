@@ -244,8 +244,8 @@ final class ModifierHoldDetector {
             onConfirm?()
         case 53: // Escape
             onCancel?()
-        case 50: // `/~
-            onNavigate?(.back)
+        case 50: // `/~ 翻页
+            onNavigate?(.nextPage)
         case 51: // Delete/Backspace
             onDelete?()
         case 9:  // V

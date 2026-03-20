@@ -6,7 +6,9 @@ final class CmdHoldMenuState: ObservableObject {
     @Published private(set) var breadcrumb: [String] = ["TermKit"]
     @Published private(set) var level: CmdHoldMenuLevel = .root
     @Published private(set) var selectedIndex: Int = -1
+    @Published private(set) var currentPage: Int = 0
 
+    private let pageSize = 10
     private var selectedFolder: FolderEntry?
     private var selectedCLI: CLIEntry?
 
@@ -23,7 +25,8 @@ final class CmdHoldMenuState: ObservableObject {
         return currentItems.count
     }
 
-    var currentItems: [CmdHoldMenuItem] {
+    /// 当前层级的完整菜单项（未分页）
+    private var allLevelItems: [CmdHoldMenuItem] {
         switch level {
         case .root:
             var items = [
@@ -76,17 +79,72 @@ final class CmdHoldMenuState: ObservableObject {
             return [
                 CmdHoldMenuItem(title: L10n.SlashCommand.clear, subtitle: "/clear", icon: nil, kind: .actionCommand("/clear")),
                 CmdHoldMenuItem(title: L10n.SlashCommand.exit, subtitle: "/exit", icon: nil, kind: .actionCommand("/exit")),
-                CmdHoldMenuItem(title: L10n.SlashCommand.compact, subtitle: "/compact", icon: nil, kind: .actionCommand("/compact")),
-                CmdHoldMenuItem(title: L10n.SlashCommand.model, subtitle: "/model", icon: nil, kind: .actionCommand("/model")),
-                CmdHoldMenuItem(title: L10n.SlashCommand.config, subtitle: "/config", icon: nil, kind: .actionCommand("/config")),
-                CmdHoldMenuItem(title: L10n.SlashCommand.cost, subtitle: "/cost", icon: nil, kind: .actionCommand("/cost")),
-                CmdHoldMenuItem(title: L10n.SlashCommand.memory, subtitle: "/memory", icon: nil, kind: .actionCommand("/memory")),
-                CmdHoldMenuItem(title: L10n.SlashCommand.review, subtitle: "/review", icon: nil, kind: .actionCommand("/review")),
-                CmdHoldMenuItem(title: L10n.SlashCommand.permissions, subtitle: "/permissions", icon: nil, kind: .actionCommand("/permissions")),
-                CmdHoldMenuItem(title: L10n.SlashCommand.vim, subtitle: "/vim", icon: nil, kind: .actionCommand("/vim")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.compact, subtitle: "/compact", icon: "custom:claude", kind: .actionCommand("/compact")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.model, subtitle: "/model", icon: "custom:claude", kind: .actionCommand("/model")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.config, subtitle: "/config", icon: "custom:claude", kind: .actionCommand("/config")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.cost, subtitle: "/cost", icon: "custom:claude", kind: .actionCommand("/cost")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.memory, subtitle: "/memory", icon: "custom:claude", kind: .actionCommand("/memory")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.review, subtitle: "/review", icon: "custom:claude", kind: .actionCommand("/review")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.permissions, subtitle: "/permissions", icon: "custom:claude", kind: .actionCommand("/permissions")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.vim, subtitle: "/vim", icon: "custom:claude", kind: .actionCommand("/vim")),
                 CmdHoldMenuItem(title: L10n.SlashCommand.help, subtitle: "/help", icon: nil, kind: .actionCommand("/help")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.rewind, subtitle: "/rewind", icon: "custom:claude", kind: .actionCommand("/rewind")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.insights, subtitle: "/insights", icon: "custom:claude", kind: .actionCommand("/insights")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.simplify, subtitle: "/simplify", icon: "custom:claude", kind: .actionCommand("/simplify")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.branch, subtitle: "/branch", icon: "custom:claude", kind: .actionCommand("/branch")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.remoteControl, subtitle: "/remote-control", icon: "custom:claude", kind: .actionCommand("/remote-control")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.exportChat, subtitle: "/export", icon: "custom:claude", kind: .actionCommand("/export")),
             ]
         }
+    }
+
+    /// 分页后的当前页菜单项
+    var currentItems: [CmdHoldMenuItem] {
+        let all = allLevelItems
+        if level == .root {
+            // 根菜单：编号项分页，工具项始终显示
+            let numbered = all.filter { item in
+                switch item.kind {
+                case .pasteImage, .deleteInput, .openSelection,
+                     .disableTemporary, .disablePermanent: return false
+                default: return true
+                }
+            }
+            let utility = all.filter { item in
+                switch item.kind {
+                case .pasteImage, .deleteInput, .openSelection,
+                     .disableTemporary, .disablePermanent: return true
+                default: return false
+                }
+            }
+            guard numbered.count > pageSize else { return all }
+            let start = currentPage * pageSize
+            let end = min(start + pageSize, numbered.count)
+            return Array(numbered[start..<end]) + utility
+        } else {
+            guard all.count > pageSize else { return all }
+            let start = currentPage * pageSize
+            let end = min(start + pageSize, all.count)
+            return Array(all[start..<end])
+        }
+    }
+
+    /// 总页数
+    var totalPages: Int {
+        let all = allLevelItems
+        let total: Int
+        if level == .root {
+            total = all.filter { item in
+                switch item.kind {
+                case .pasteImage, .deleteInput, .openSelection,
+                     .disableTemporary, .disablePermanent: return false
+                default: return true
+                }
+            }.count
+        } else {
+            total = all.count
+        }
+        return max(1, (total + pageSize - 1) / pageSize)
     }
 
     var releaseHint: String? {
@@ -168,6 +226,7 @@ final class CmdHoldMenuState: ObservableObject {
         breadcrumb = ["TermKit"]
         level = .root
         selectedIndex = -1
+        currentPage = 0
         selectedFolder = nil
         selectedCLI = nil
     }
@@ -189,28 +248,34 @@ final class CmdHoldMenuState: ObservableObject {
             level = .folders
             breadcrumb = ["TermKit", L10n.Menu.openFolders]
             selectedIndex = -1
+            currentPage = 0
         case .openCLIs:
             level = .clis
             breadcrumb = ["TermKit", L10n.Menu.selectCLI]
             selectedIndex = -1
+            currentPage = 0
         case .folder(let folder):
             selectedFolder = folder
             level = .clis
             breadcrumb = ["TermKit", folder.title, L10n.Menu.selectCLI]
             selectedIndex = -1
+            currentPage = 0
         case .cli(let cli):
             selectedCLI = cli
             level = .actions
             breadcrumb = (selectedFolder != nil ? ["TermKit", selectedFolder!.title, cli.name] : ["TermKit", cli.name])
             selectedIndex = -1
+            currentPage = 0
         case .openTemplates:
             level = .templates
             breadcrumb = ["TermKit", L10n.Menu.commandTemplates]
             selectedIndex = -1
+            currentPage = 0
         case .openSlashCommands:
             level = .slashCommands
             breadcrumb = ["TermKit", L10n.Menu.slashCommands]
             selectedIndex = -1
+            currentPage = 0
         case .pasteImage, .deleteInput, .openSelection, .disableTemporary, .disablePermanent, .addFolder, .addCLI, .addAction, .actionCommand, .template:
             break
         }
@@ -238,6 +303,11 @@ final class CmdHoldMenuState: ObservableObject {
             }
         case .back:
             goBack()
+        case .nextPage:
+            if totalPages > 1 {
+                currentPage = (currentPage + 1) % totalPages
+                selectedIndex = -1
+            }
         }
     }
 
@@ -251,6 +321,7 @@ final class CmdHoldMenuState: ObservableObject {
             if let folder = selectedFolder {
                 level = .folders
                 breadcrumb = ["TermKit", L10n.Menu.openFolders]
+                currentPage = 0
                 if let idx = config.folders.firstIndex(where: { $0.id == folder.id }) {
                     selectedIndex = idx
                 } else {
@@ -261,6 +332,7 @@ final class CmdHoldMenuState: ObservableObject {
             }
         case .actions:
             level = .clis
+            currentPage = 0
             if let folder = selectedFolder {
                 breadcrumb = ["TermKit", folder.title, L10n.Menu.selectCLI]
             } else {
@@ -324,6 +396,7 @@ enum CmdHoldMenuNavigation: Equatable {
     case down
     case back
     case forward
+    case nextPage
 }
 
 struct CmdHoldMenuItem: Identifiable, Equatable {

@@ -1317,15 +1317,30 @@ enum L10n {
 
         static var navigationHint: String {
             switch L10n.current {
-            case .zhHans: return "← ` 回退　↑↓ 选择　→ 下一步"
-            case .zhHant: return "← ` 回退　↑↓ 選擇　→ 下一步"
-            case .en:     return "← ` Back  ↑↓ Select  → Next"
-            case .ja:     return "← ` 戻る　↑↓ 選択　→ 次へ"
-            case .ko:     return "← ` 뒤로　↑↓ 선택　→ 다음"
-            case .es:     return "← ` Atrás  ↑↓ Elegir  → Sig."
-            case .fr:     return "← ` Retour  ↑↓ Choisir  → Suiv."
-            case .de:     return "← ` Zurück  ↑↓ Wählen  → Weiter"
-            case .pt:     return "← ` Voltar  ↑↓ Escolher  → Próx."
+            case .zhHans: return "← 回退　↑↓ 选择　→ 下一步"
+            case .zhHant: return "← 回退　↑↓ 選擇　→ 下一步"
+            case .en:     return "← Back  ↑↓ Select  → Next"
+            case .ja:     return "← 戻る　↑↓ 選択　→ 次へ"
+            case .ko:     return "← 뒤로　↑↓ 선택　→ 다음"
+            case .es:     return "← Atrás  ↑↓ Elegir  → Sig."
+            case .fr:     return "← Retour  ↑↓ Choisir  → Suiv."
+            case .de:     return "← Zurück  ↑↓ Wählen  → Weiter"
+            case .pt:     return "← Voltar  ↑↓ Escolher  → Próx."
+            }
+        }
+
+        /// 页码指示器，如 "` 翻页 [1/2]"
+        static func pageIndicator(_ current: Int, _ total: Int) -> String {
+            switch L10n.current {
+            case .zhHans: return "` 翻页 [\(current)/\(total)]"
+            case .zhHant: return "` 翻頁 [\(current)/\(total)]"
+            case .en:     return "` Page [\(current)/\(total)]"
+            case .ja:     return "` ページ [\(current)/\(total)]"
+            case .ko:     return "` 페이지 [\(current)/\(total)]"
+            case .es:     return "` Pág. [\(current)/\(total)]"
+            case .fr:     return "` Page [\(current)/\(total)]"
+            case .de:     return "` Seite [\(current)/\(total)]"
+            case .pt:     return "` Pág. [\(current)/\(total)]"
             }
         }
     }
@@ -1712,6 +1727,84 @@ enum L10n {
             case .fr:     return "Aide"
             case .de:     return "Hilfe"
             case .pt:     return "Ajuda"
+            }
+        }
+        static var rewind: String {
+            switch L10n.current {
+            case .zhHans: return "回退代码/对话"
+            case .zhHant: return "回退程式碼/對話"
+            case .en:     return "Rewind Code/Chat"
+            case .ja:     return "コード/チャットを巻き戻す"
+            case .ko:     return "코드/대화 되감기"
+            case .es:     return "Rebobinar código/chat"
+            case .fr:     return "Rembobiner code/chat"
+            case .de:     return "Code/Chat zurückspulen"
+            case .pt:     return "Rebobinar código/chat"
+            }
+        }
+        static var insights: String {
+            switch L10n.current {
+            case .zhHans: return "使用习惯分析"
+            case .zhHant: return "使用習慣分析"
+            case .en:     return "Usage Insights"
+            case .ja:     return "使用状況の分析"
+            case .ko:     return "사용 습관 분석"
+            case .es:     return "Análisis de uso"
+            case .fr:     return "Analyse d'utilisation"
+            case .de:     return "Nutzungsanalyse"
+            case .pt:     return "Análise de uso"
+            }
+        }
+        static var simplify: String {
+            switch L10n.current {
+            case .zhHans: return "代码审查（三并行）"
+            case .zhHant: return "程式碼審查（三並行）"
+            case .en:     return "Code Review (3 Agents)"
+            case .ja:     return "コードレビュー（3並列）"
+            case .ko:     return "코드 리뷰 (3 에이전트)"
+            case .es:     return "Revisión de código (3 agentes)"
+            case .fr:     return "Revue de code (3 agents)"
+            case .de:     return "Code-Review (3 Agenten)"
+            case .pt:     return "Revisão de código (3 agentes)"
+            }
+        }
+        static var branch: String {
+            switch L10n.current {
+            case .zhHans: return "分叉当前对话"
+            case .zhHant: return "分叉當前對話"
+            case .en:     return "Branch Conversation"
+            case .ja:     return "会話を分岐"
+            case .ko:     return "대화 분기"
+            case .es:     return "Bifurcar conversación"
+            case .fr:     return "Bifurquer la conversation"
+            case .de:     return "Konversation verzweigen"
+            case .pt:     return "Bifurcar conversa"
+            }
+        }
+        static var remoteControl: String {
+            switch L10n.current {
+            case .zhHans: return "远程控制"
+            case .zhHant: return "遠端控制"
+            case .en:     return "Remote Control"
+            case .ja:     return "リモートコントロール"
+            case .ko:     return "원격 제어"
+            case .es:     return "Control remoto"
+            case .fr:     return "Contrôle à distance"
+            case .de:     return "Fernsteuerung"
+            case .pt:     return "Controle remoto"
+            }
+        }
+        static var exportChat: String {
+            switch L10n.current {
+            case .zhHans: return "导出对话为 Markdown"
+            case .zhHant: return "匯出對話為 Markdown"
+            case .en:     return "Export as Markdown"
+            case .ja:     return "Markdownとしてエクスポート"
+            case .ko:     return "Markdown으로 내보내기"
+            case .es:     return "Exportar como Markdown"
+            case .fr:     return "Exporter en Markdown"
+            case .de:     return "Als Markdown exportieren"
+            case .pt:     return "Exportar como Markdown"
             }
         }
     }
