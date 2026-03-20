@@ -77,23 +77,27 @@ final class CmdHoldMenuState: ObservableObject {
             }
         case .slashCommands:
             return [
-                CmdHoldMenuItem(title: L10n.SlashCommand.clear, subtitle: "/clear", icon: nil, kind: .actionCommand("/clear")),
-                CmdHoldMenuItem(title: L10n.SlashCommand.exit, subtitle: "/exit", icon: nil, kind: .actionCommand("/exit")),
-                CmdHoldMenuItem(title: L10n.SlashCommand.compact, subtitle: "/compact", icon: "custom:claude", kind: .actionCommand("/compact")),
-                CmdHoldMenuItem(title: L10n.SlashCommand.model, subtitle: "/model", icon: "custom:claude", kind: .actionCommand("/model")),
-                CmdHoldMenuItem(title: L10n.SlashCommand.config, subtitle: "/config", icon: "custom:claude", kind: .actionCommand("/config")),
-                CmdHoldMenuItem(title: L10n.SlashCommand.cost, subtitle: "/cost", icon: "custom:claude", kind: .actionCommand("/cost")),
-                CmdHoldMenuItem(title: L10n.SlashCommand.memory, subtitle: "/memory", icon: "custom:claude", kind: .actionCommand("/memory")),
-                CmdHoldMenuItem(title: L10n.SlashCommand.review, subtitle: "/review", icon: "custom:claude", kind: .actionCommand("/review")),
-                CmdHoldMenuItem(title: L10n.SlashCommand.permissions, subtitle: "/permissions", icon: "custom:claude", kind: .actionCommand("/permissions")),
-                CmdHoldMenuItem(title: L10n.SlashCommand.vim, subtitle: "/vim", icon: "custom:claude", kind: .actionCommand("/vim")),
-                CmdHoldMenuItem(title: L10n.SlashCommand.help, subtitle: "/help", icon: nil, kind: .actionCommand("/help")),
-                CmdHoldMenuItem(title: L10n.SlashCommand.rewind, subtitle: "/rewind", icon: "custom:claude", kind: .actionCommand("/rewind")),
-                CmdHoldMenuItem(title: L10n.SlashCommand.insights, subtitle: "/insights", icon: "custom:claude", kind: .actionCommand("/insights")),
-                CmdHoldMenuItem(title: L10n.SlashCommand.simplify, subtitle: "/simplify", icon: "custom:claude", kind: .actionCommand("/simplify")),
-                CmdHoldMenuItem(title: L10n.SlashCommand.branch, subtitle: "/branch", icon: "custom:claude", kind: .actionCommand("/branch")),
+                // ── 通用命令（无图标） ──
+                CmdHoldMenuItem(title: L10n.SlashCommand.clear,         subtitle: "/clear",          icon: nil, kind: .actionCommand("/clear")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.exit,          subtitle: "/exit",           icon: nil, kind: .actionCommand("/exit")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.help,          subtitle: "/help",           icon: nil, kind: .actionCommand("/help")),
+                // ── Claude Code 专属命令 ──
+                CmdHoldMenuItem(title: L10n.SlashCommand.compact,       subtitle: "/compact",        icon: "custom:claude", kind: .actionCommand("/compact")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.model,         subtitle: "/model",          icon: "custom:claude", kind: .actionCommand("/model")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.config,        subtitle: "/config",         icon: "custom:claude", kind: .actionCommand("/config")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.cost,          subtitle: "/cost",           icon: "custom:claude", kind: .actionCommand("/cost")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.memory,        subtitle: "/memory",         icon: "custom:claude", kind: .actionCommand("/memory")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.review,        subtitle: "/review",         icon: "custom:claude", kind: .actionCommand("/review")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.permissions,   subtitle: "/permissions",    icon: "custom:claude", kind: .actionCommand("/permissions")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.vim,           subtitle: "/vim",            icon: "custom:claude", kind: .actionCommand("/vim")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.rewind,        subtitle: "/rewind",         icon: "custom:claude", kind: .actionCommand("/rewind")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.insights,      subtitle: "/insights",       icon: "custom:claude", kind: .actionCommand("/insights")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.simplify,      subtitle: "/simplify",       icon: "custom:claude", kind: .actionCommand("/simplify")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.branch,        subtitle: "/branch",         icon: "custom:claude", kind: .actionCommand("/branch")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.btw,           subtitle: "/btw",            icon: "custom:claude", kind: .actionCommand("/btw")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.loop,          subtitle: "/loop",           icon: "custom:claude", kind: .actionCommand("/loop")),
                 CmdHoldMenuItem(title: L10n.SlashCommand.remoteControl, subtitle: "/remote-control", icon: "custom:claude", kind: .actionCommand("/remote-control")),
-                CmdHoldMenuItem(title: L10n.SlashCommand.exportChat, subtitle: "/export", icon: "custom:claude", kind: .actionCommand("/export")),
+                CmdHoldMenuItem(title: L10n.SlashCommand.exportChat,    subtitle: "/export",         icon: "custom:claude", kind: .actionCommand("/export")),
             ]
         }
     }

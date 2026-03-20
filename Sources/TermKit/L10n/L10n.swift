@@ -1807,6 +1807,32 @@ enum L10n {
             case .pt:     return "Exportar como Markdown"
             }
         }
+        static var btw: String {
+            switch L10n.current {
+            case .zhHans: return "并行侧问题"
+            case .zhHant: return "並行側問題"
+            case .en:     return "Side Question"
+            case .ja:     return "サイド質問"
+            case .ko:     return "병렬 사이드 질문"
+            case .es:     return "Pregunta paralela"
+            case .fr:     return "Question parallèle"
+            case .de:     return "Parallele Nebenfrage"
+            case .pt:     return "Pergunta paralela"
+            }
+        }
+        static var loop: String {
+            switch L10n.current {
+            case .zhHans: return "定时重复任务"
+            case .zhHant: return "定時重複任務"
+            case .en:     return "Scheduled Loop Task"
+            case .ja:     return "定期繰り返しタスク"
+            case .ko:     return "정기 반복 작업"
+            case .es:     return "Tarea en bucle"
+            case .fr:     return "Tâche en boucle"
+            case .de:     return "Wiederholte Aufgabe"
+            case .pt:     return "Tarefa em loop"
+            }
+        }
     }
 
     // MARK: - 默认 CLI 动作标题
